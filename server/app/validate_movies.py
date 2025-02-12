@@ -54,7 +54,7 @@ class ValidateMovies(Validator):
                 }
         return None
 
-    def get_movie_or_tv_info(self, title):
+    def search(self, title):
         """Fetch movie or TV show details from multiple sources, including images."""
         info = self.search_omdb(title, content_type)
         if not info:
