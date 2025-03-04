@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import cohere
 import os
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 # idea for implementing comments + rating
@@ -11,7 +12,7 @@ load_dotenv()
 class LLMModel(ABC):
     
     def __init__(self, content_type):
-        self.system_prompt = f'You are a {content_type} recommender system that gives ONLY COMMA separated {content_type} titles to the user AND NOTHING ELSE. For example: <Naruto, One piece, Bleach>'
+        self.system_prompt = f"You are a {content_type} recommender system that gives ONLY COMMA separated {content_type} titles to the user AND NOTHING ELSE. For example: 'Naruto; One piece; Bleach'"
         self.content_type = content_type
     @abstractmethod
     def generate(self, prompt: str) -> str:
@@ -27,7 +28,7 @@ class CohereModel(LLMModel):
         self.client = cohere.Client(api_key)
 
     def generate(self, prompt: str) -> str:
-        message = f"Find comma separated {self.content_type} titles matching the prompt: {prompt}"
+        message = f"Find the most relevant comma separated {self.content_type} titles matching the prompt: {prompt}. Output your answer in this EXACT format 'title1; title2; title3'"
         response = self.client.chat(
             message=message,
             connectors=[{"id": "web-search"}],
@@ -40,20 +41,36 @@ class CohereModel(LLMModel):
 
 class ModelHandler:
     
-    @staticmethod
-    def get_model(model_name: str, **kwargs) -> LLMModel:
+    def __init__(self, model_name: str, **kwargs):
         if model_name.lower() == "cohere":
-            return CohereModel(**kwargs)
+            self.model = CohereModel(**kwargs)
         else:
             raise ValueError(f"Model '{model_name}' is not supported.")
+    
+    async def generate_once(self, prompt: str) -> set:
+        result = await asyncio.to_thread(self.model.generate, prompt)
+        result = result.split('; ')
+        return set(result)  
+    
+    async def generate_multiple(self, prompt: str, n_calls: int = 5):
+        tasks = [self.generate_once(prompt) for _ in range(n_calls)]
+        results = await asyncio.gather(*tasks)
+        aggregated_results = set().union(*results)
+        return aggregated_results
+        
+def generate(prompt: str, content_type: str, model_name: str = 'cohere'):
+    model = ModelHandler(model_name, content_type=content_type)
+    result = asyncio.run(model.generate_multiple(prompt))
+    return result
 
 # ✅ Example usage
 if __name__ == "__main__":
     
-    model = ModelHandler.get_model("cohere", content_type='anime')
+    model = ModelHandler("cohere", content_type='anime')
+    
     
     # Generate text
     prompt = "female mc"
-    result = model.generate(prompt)
+    result = asyncio.run(model.generate_multiple(prompt))
     
     print(result)

@@ -54,7 +54,6 @@ def compute_score(embedding1, embedding2, rank, alpha=0.75):
     return score
 
 
-import numpy as np
 
 def rank_recommendations(preferences, recommendation_embeddings, k=5, alpha=0.75):
 

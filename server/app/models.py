@@ -25,11 +25,6 @@ class UserRecommendation(db.Model):
 
 
 
-from datetime import datetime
-from app.extensions import db
-
-
-
 
 # ✅ Table 2: Global Popular Recommendations
 class PopularRecommendation(db.Model):

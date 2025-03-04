@@ -1,6 +1,6 @@
 import requests
 import os
-from validate import Validator
+from app.validate import Validator
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -54,25 +54,25 @@ class ValidateMovies(Validator):
                 }
         return None
 
-    def search(self, title):
+    def validate(self, title):
         """Fetch movie or TV show details from multiple sources, including images."""
         info = self.search_omdb(title, content_type)
         if not info:
             info = self.search_tmdb(title, content_type)
         return info
 
-# Example usage
-title = "Inception"  # Change this to a movie or TV show title
-content_type = "movie"  # Use "movie" or "series" (TV)
+# # Example usage
+# title = "Inception"  # Change this to a movie or TV show title
+# content_type = "movie"  # Use "movie" or "series" (TV)
 
-info = get_movie_or_tv_info(title, content_type)
+# info = get_movie_or_tv_info(title, content_type)
 
-if info:
-    print(f"Title: {info['title']}")
-    print(f"Description: {info['description']}")
-    print(f"Genres: {', '.join(info['genres'])}")
-    print(f"Year: {info['year']}")
-    print(f"Poster URL: {info['poster_url']}")
-    print(f"More Info: {info['url']}")
-else:
-    print("No data found.")
+# if info:
+#     print(f"Title: {info['title']}")
+#     print(f"Description: {info['description']}")
+#     print(f"Genres: {', '.join(info['genres'])}")
+#     print(f"Year: {info['year']}")
+#     print(f"Poster URL: {info['poster_url']}")
+#     print(f"More Info: {info['url']}")
+# else:
+#     print("No data found.")

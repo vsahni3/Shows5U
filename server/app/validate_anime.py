@@ -1,5 +1,5 @@
 import requests
-from validate import Validator
+from app.validate import Validator
 
 class ValidateAnime(Validator):
     @staticmethod
@@ -82,7 +82,7 @@ class ValidateAnime(Validator):
                 }
         return None
     @staticmethod
-    def search(anime_title):
+    def validate(anime_title):
         """Fetch anime details from multiple sources, including image URLs."""
         info = ValidateAnime.search_jikan(anime_title)
         if not info:
@@ -91,16 +91,16 @@ class ValidateAnime(Validator):
             info = ValidateAnime.search_kitsu(anime_title)
         return info
 
-# Example Usage
-anime_title = 'Fullmetal Alchemist: Brotherhood'
-anime_info = get_anime_info(anime_title)
+# # Example Usage
+# anime_title = 'Fullmetal Alchemist: Brotherhood'
+# anime_info = get_anime_info(anime_title)
 
-if anime_info:
-    print(f"Title: {anime_info['title']}")
-    print(f"Description: {anime_info['description']}")
-    print(f"Genres: {', '.join(anime_info['genres'])}")
-    print(f"Year: {anime_info['year']}")
-    print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
-    print(f"More Info: {anime_info['url']}")
-else:
-    print("Anime not found.")
+# if anime_info:
+#     print(f"Title: {anime_info['title']}")
+#     print(f"Description: {anime_info['description']}")
+#     print(f"Genres: {', '.join(anime_info['genres'])}")
+#     print(f"Year: {anime_info['year']}")
+#     print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
+#     print(f"More Info: {anime_info['url']}")
+# else:
+#     print("Anime not found.")
