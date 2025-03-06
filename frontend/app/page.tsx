@@ -3,14 +3,35 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { Card, Flex, Heading, Button } from '@radix-ui/themes';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   // Handle search submit
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('Searching for:', searchQuery);
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery, content_type: "anime" }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch results');
+
+      const data = await response.json();
+
+      // Navigate to the results page with search results
+      router.push(`/results?data=${encodeURIComponent(JSON.stringify(data))}`);
+    } catch (error) {
+        console.error('Search failed:', error);
+    } finally {
+        setIsLoading(false); // End loading state
+    }
   };
 
   // Handle sign out
@@ -33,12 +54,7 @@ export default function Home() {
           align="center"
           className="bg-white w-full px-8 py-3 fixed top-0 left-0 right-0 shadow-sm z-10"
         >
-          {/* Logo + Nav Links */}
-          <Flex
-  justify="between"
-  align="center"
-  className="bg-white w-full px-8 py-4 fixed top-0 left-0 right-0 shadow-sm z-10"
->
+      
   {/* Logo and Nav Links */}
   <Flex align="center" gap="4">
     <img
@@ -69,17 +85,6 @@ export default function Home() {
     Sign Out
   </Button>
 </Flex>
-
-
-          {/* Sign Out Button */}
-          <Button
-            onClick={handleSignOut}
-            variant="soft"
-            className="px-4 py-2 text-sm rounded-md bg-neutral-100 hover:bg-neutral-200 transition-colors"
-          >
-            Sign Out
-          </Button>
-        </Flex>
 
         {/* Central Search Section */}
         <Flex

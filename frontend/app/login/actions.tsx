@@ -18,20 +18,20 @@ export async function login(formData: AuthData) {
 
     await supabase.auth.signOut();
     const { error } = await supabase.auth.signInWithPassword(formData)
-    console.log(error)
+
     if (error) {
-      redirect('/error')
+      return { success: false, message: error.message }; // ✅ Return a structured response
     }
   
-    revalidatePath('/', 'layout')
-    redirect('/')
+    return { success: true };
+  
+
   }
 
 
 export async function signup(formData: AuthData) {
 
     const supabase = await createClient()
-    console.log('sing up');
     
 
     // type-casting here for convenience
@@ -45,18 +45,18 @@ export async function signup(formData: AuthData) {
             emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`, // 🔹 Ensures redirect after email confirmation
         },
     });
-    console.log(error)
+
 
 
 
 
     if (error) {
-        redirect('/error')
+      return { success: false, message: error.message }; // ✅ Return a structured response
     }
+  
+    return { success: true };
     
 
-    revalidatePath('/', 'layout')
-    redirect('/checkEmail')
 }
 
 
@@ -74,10 +74,15 @@ export async function signInWithGoogle() {
       },
     })
   
-    if (error) throw error
+    if (error) {
+      return { success: false, message: error.message }; // ✅ Return a structured response
+    }
+  
+    
     
     if (data.url) {
       redirect(data.url)
     }
+    return { success: true };
   }
 
