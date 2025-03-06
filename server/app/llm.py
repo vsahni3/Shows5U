@@ -15,7 +15,7 @@ class LLMModel(ABC):
         self.system_prompt = f"You are a {content_type} recommender system that gives ONLY COMMA separated {content_type} titles to the user AND NOTHING ELSE. For example: 'Naruto; One piece; Bleach'"
         self.content_type = content_type
     @abstractmethod
-    def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str) -> str:
         pass
 
 
@@ -25,11 +25,11 @@ class CohereModel(LLMModel):
         super().__init__(content_type)
         self.model = model
         api_key = os.getenv("COHERE_API_KEY")
-        self.client = cohere.Client(api_key)
+        self.client = cohere.AsyncClient(api_key)
 
-    def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str) -> str:
         message = f"Find the most relevant comma separated {self.content_type} titles matching the prompt: {prompt}. Output your answer in this EXACT format 'title1; title2; title3'"
-        response = self.client.chat(
+        response = await self.client.chat(
             message=message,
             connectors=[{"id": "web-search"}],
             preamble=self.system_prompt,
@@ -47,15 +47,11 @@ class ModelHandler:
         else:
             raise ValueError(f"Model '{model_name}' is not supported.")
     
-    async def generate_once(self, prompt: str) -> set:
-        result = await asyncio.to_thread(self.model.generate, prompt)
-        result = result.split('; ')
-        return set(result)  
-    
     async def generate_multiple(self, prompt: str, n_calls: int = 5):
-        tasks = [self.generate_once(prompt) for _ in range(n_calls)]
-        results = await asyncio.gather(*tasks)
-        aggregated_results = set().union(*results)
+        coroutines = [self.model.generate(prompt) for _ in range(n_calls)]
+        results = await asyncio.gather(*coroutines)
+        cleaned_results = [set(result.split('; ')) for result in results]
+        aggregated_results = set().union(*cleaned_results)
         return aggregated_results
         
 def generate(prompt: str, content_type: str, model_name: str = 'cohere'):

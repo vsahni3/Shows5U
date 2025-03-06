@@ -12,54 +12,69 @@ class ValidateMovies(Validator):
     def __init__(self, content_type):
         self.content_type = content_type
         
-    def search_omdb(self, title, content_type):
-        """Search for a movie or TV show in OMDb and return details including image URL."""
+    async def search_omdb(self, title):
+        """Search for a movie or TV show in OMDb asynchronously."""
         url = f"http://www.omdbapi.com/?t={title}&type={self.content_type}&apikey={ValidateMovies.omdb_api_key}"
 
-        response = requests.get(url)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("Response") == "True":
-                return {
-                    "title": data.get("Title"),
-                    "description": data.get("Plot"),
-                    "genres": data.get("Genre", "").split(", "),
-                    "year": data.get("Year"),
-                    "poster_url": data.get("Poster"),  
-                    "url": f"https://www.imdb.com/title/{data.get('imdbID')}"
-                }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("Response") == "True":
+                        return {
+                            "title": data.get("Title"),
+                            "description": data.get("Plot"),
+                            "genres": data.get("Genre", "").split(", "),
+                            "year": data.get("Year"),
+                            "poster_url": data.get("Poster"),
+                            "url": f"https://www.imdb.com/title/{data.get('imdbID')}"
+                        }
         return None
 
-    def search_tmdb(self, title):
-        """Search for a movie or TV show in TMDb and return details including image URL."""
+    async def search_tmdb(self, title):
+        """Search for a movie or TV show in TMDb asynchronously."""
         media_type = "movie" if self.content_type == "movie" else "tv"
         url = f"https://api.themoviedb.org/3/search/{media_type}?api_key={ValidateMovies.tmdb_api_key}&query={title}"
-        
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if data["results"]:
-                result = data["results"][0]  # Take the first search result
-                poster_path = result.get("poster_path")
-                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None  # ✅ Construct full image URL
 
-                return {
-                    "title": result.get("title") if media_type == "movie" else result.get("name"),
-                    "description": result.get("overview"),
-                    "genres": ["Unknown"],  # TMDb genres require a separate API call
-                    "year": result.get("release_date", "")[:4] if media_type == "movie" else result.get("first_air_date", "")[:4],
-                    "poster_url": poster_url,  # ✅ Image URL
-                    "url": f"https://www.themoviedb.org/{media_type}/{result.get('id')}"
-                }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["results"]:
+                        result = data["results"][0]  # Take the first search result
+                        poster_path = result.get("poster_path")
+                        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+
+                        return {
+                            "title": result.get("title") if media_type == "movie" else result.get("name"),
+                            "description": result.get("overview"),
+                            "genres": ["Unknown"],  # TMDb genres require a separate API call
+                            "year": result.get("release_date", "")[:4] if media_type == "movie" else result.get("first_air_date", "")[:4],
+                            "poster_url": poster_url,
+                            "url": f"https://www.themoviedb.org/{media_type}/{result.get('id')}"
+                        }
         return None
 
-    def validate(self, title):
-        """Fetch movie or TV show details from multiple sources, including images."""
-        info = self.search_omdb(title, content_type)
-        if not info:
-            info = self.search_tmdb(title, content_type)
-        return info
+    async def validate(self, title):
+        """Fetch movie or TV show details from multiple sources and return the first available response."""
+
+        tasks = {
+            asyncio.create_task(self.search_omdb(title)): "omdb",
+            asyncio.create_task(self.search_tmdb(title)): "tmdb",
+        }
+        
+        for future in asyncio.as_completed(tasks):
+            try:
+                result = await future
+                if result:
+                    for task in tasks:
+                        if not task.done():
+                            task.cancel()
+                    return result 
+            except Exception:
+                print(f"Error fetching from {title}: {e}") 
+
+        return None  
 
 # # Example usage
 # title = "Inception"  # Change this to a movie or TV show title

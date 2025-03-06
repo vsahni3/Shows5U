@@ -1,5 +1,6 @@
 from app.validate_movies import ValidateMovies
 from app.validate_anime import ValidateAnime
+import asyncio 
 
 class ValidatorHandler:
     def __init__(self, content_type: str):
@@ -8,10 +9,14 @@ class ValidatorHandler:
         else:
             self.validator = ValidateMovies(content_type)
             
-    def search(self, title):
-        return self.validator.validate(title)
+    async def validate_multiple(self, titles: set[str]):
+        coroutines = [self.validator.validate(title) for title in titles]
+        results = await asyncio.gather(*coroutines)
+        results = list(filter(lambda result: bool(result), results))
+        return results
+        
 
 def validate_titles(content_type: str, titles: set[str]):
     validator_handler = ValidatorHandler(content_type)
-    results = [result for title in titles if (result := validator_handler.search(title))]
+    results = asyncio.run(validator_handler.validate_multiple(titles))
     return results 
