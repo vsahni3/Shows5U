@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useState, useContext } from 'react';
 
 // 1. Create a Context
@@ -5,7 +6,7 @@ const DataContext = createContext();
 
 // 2. Create a Provider Component (This wraps the app)
 export function DataProvider({ children }) {
-  const [sharedData, setSharedData] = useState("Hello from Context!");
+  const [sharedData, setSharedData] = useState([]);
 
   return (
     <DataContext.Provider value={{ sharedData, setSharedData }}>

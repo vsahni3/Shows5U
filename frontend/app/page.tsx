@@ -4,15 +4,19 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { Card, Flex, Heading, Button } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
+import { useData } from './context/dataContext';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { setSharedData } = useData();
 
   // Handle search submit
   const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    
     setIsLoading(true);
     try {
       const response = await fetch('http://127.0.0.1:5000/respond', {
@@ -24,9 +28,9 @@ export default function Home() {
       if (!response.ok) throw new Error('Failed to fetch results');
 
       const data = await response.json();
-
-      // Navigate to the results page with search results
-      router.push(`/results?data=${encodeURIComponent(JSON.stringify(data))}`);
+      console.log(data);
+      setSharedData(data);
+      // router.push('/results');
     } catch (error) {
         console.error('Search failed:', error);
     } finally {
@@ -36,7 +40,7 @@ export default function Home() {
 
   // Handle sign out
   const handleSignOut = () => {
-    console.log('Sign Out clicked');
+    router.push("/login");
   };
 
   return (
@@ -78,6 +82,7 @@ export default function Home() {
 
   {/* Sign Out Button */}
   <Button
+   disabled={isLoading}
     onClick={handleSignOut}
     variant="soft"
     className="px-4 py-2 text-sm rounded-md bg-neutral-100 hover:bg-neutral-200 transition-colors"
