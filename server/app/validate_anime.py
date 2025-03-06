@@ -91,35 +91,43 @@ class ValidateAnime(Validator):
     async def validate(title):
         """Fetch anime details asynchronously and return the first valid result."""
 
-        tasks = {
-            asyncio.create_task(ValidateAnime.search_jikan(title)): "Jikan",
-            asyncio.create_task(ValidateAnime.search_anilist(title)): "AniList",
-            asyncio.create_task(ValidateAnime.search_kitsu(title)): "Kitsu"
-        }
+        # tasks = {
+        #     asyncio.create_task(ValidateAnime.search_jikan(title)): "Jikan",
+        #     asyncio.create_task(ValidateAnime.search_anilist(title)): "AniList",
+        #     asyncio.create_task(ValidateAnime.search_kitsu(title)): "Kitsu"
+        # }
 
-        for future in asyncio.as_completed(tasks):
-            try:
-                result = await future
-                if result:  
-                    for task in tasks:
-                        if not task.done():
-                            task.cancel()  
-                    return result
-            except Exception as e:
-                print(f"Error fetching from {title}: {e}") 
+        # for future in asyncio.as_completed(tasks):
+        #     try:
+        #         result = await future
+        #         if result:  
+        #             print(result, '\n\n')
+        #     except Exception as e:
+        #         print(f"Error fetching from {title}: {e}") 
+        # res = await ValidateAnime.search_jikan(title)
+        # if res:
+        #     return res
+        response_good_img = await ValidateAnime.search_kitsu(title)
+        for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan]:
+            response = await f(title)
+            if response:
+                if response_good_img:
+                    response['image_url'] = response_good_img['image_url']
+                return response 
+        return response_good_img
 
-        return None  # Return None if all sources failed
 
 # # Example Usage
 if __name__ == "__main__":
+
     anime_title = 'Fullmetal Alchemist: Brotherhood'
     anime_info = asyncio.run(ValidateAnime.validate(anime_title))
-    if anime_info:
-        print(f"Title: {anime_info['title']}")
-        print(f"Description: {anime_info['description']}")
-        print(f"Genres: {', '.join(anime_info['genres'])}")
-        print(f"Year: {anime_info['year']}")
-        print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
-        print(f"More Info: {anime_info['url']}")
-    else:
-        print("Anime not found.")
+    # if anime_info:
+    #     print(f"Title: {anime_info['title']}")
+    #     print(f"Description: {anime_info['description']}")
+    #     print(f"Genres: {', '.join(anime_info['genres'])}")
+    #     print(f"Year: {anime_info['year']}")
+    #     print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
+    #     print(f"More Info: {anime_info['url']}")
+    # else:
+    #     print("Anime not found.")

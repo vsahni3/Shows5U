@@ -44,6 +44,7 @@ export default function LoginPage() {
       }
   
       if (!response.success) {
+        success = false;
         setError(response.message || "Authentication failed. Please try again.");
         return; // ⛔ Stop execution if login/signup fails
       }
@@ -66,6 +67,7 @@ export default function LoginPage() {
     let success;
     if (isSignup) {
       success = await handleAuthAction(signup, { email, password });
+      console.log(success)
       if (success) router.push("/checkEmail");
     } else {
       success = await handleAuthAction(login, { email, password });

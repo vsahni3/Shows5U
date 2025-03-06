@@ -5,6 +5,7 @@ import Head from 'next/head';
 import { Card, Flex, Heading, Button } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import { useData } from './context/dataContext';
+import Header from './components/Header';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,13 +25,14 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: searchQuery, content_type: "anime" }),
       });
+      // issue is with fetch not supabase
 
-      if (!response.ok) throw new Error('Failed to fetch results');
+      // // if (!response.ok) throw new Error('Failed to fetch results');
 
       const data = await response.json();
-      console.log(data);
-      setSharedData(data);
-      // router.push('/results');
+      setSharedData(data['results']);
+      // console.log(data['results']);
+      router.push('/results');
     } catch (error) {
         console.error('Search failed:', error);
     } finally {
@@ -38,10 +40,7 @@ export default function Home() {
     }
   };
 
-  // Handle sign out
-  const handleSignOut = () => {
-    router.push("/login");
-  };
+
 
   return (
     <>
@@ -53,43 +52,7 @@ export default function Home() {
       {/* Full Page Layout */}
       <div className="min-h-screen flex flex-col bg-neutral-50 text-gray-800">
         {/* Fixed Navbar */}
-        <Flex
-          justify="between"
-          align="center"
-          className="bg-white w-full px-8 py-3 fixed top-0 left-0 right-0 shadow-sm z-10"
-        >
-      
-  {/* Logo and Nav Links */}
-  <Flex align="center" gap="4">
-    <img
-      src="/luffy.png"
-      alt="Logo"
-      className="w-16 h-16 object-contain object-cover rounded-full"
-    />
-    <Heading
-      size="4"
-      className="text-gray-700 font-medium"
-    >
-      Shows5U
-    </Heading>
-    <Heading
-      size="4"
-      className="text-gray-700 font-medium"
-    >
-      Personal
-    </Heading>
-  </Flex>
-
-  {/* Sign Out Button */}
-  <Button
-   disabled={isLoading}
-    onClick={handleSignOut}
-    variant="soft"
-    className="px-4 py-2 text-sm rounded-md bg-neutral-100 hover:bg-neutral-200 transition-colors"
-  >
-    Sign Out
-  </Button>
-</Flex>
+        <Header isLoading={isLoading}></Header>
 
         {/* Central Search Section */}
         <Flex
