@@ -107,20 +107,24 @@ class ValidateAnime(Validator):
         # res = await ValidateAnime.search_jikan(title)
         # if res:
         #     return res
-        response_good_img = await ValidateAnime.search_kitsu(title)
-        for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan]:
-            response = await f(title)
-            if response:
-                if response_good_img:
-                    response['image_url'] = response_good_img['image_url']
-                return response 
-        return response_good_img
+        try:
+            response_good_img = await ValidateAnime.search_kitsu(title)
+            for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan]:
+                response = await f(title)
+                if response:
+                    if response_good_img:
+                        response['image_url'] = response_good_img['image_url']
+                    return response 
+            return response_good_img
+        except Exception as e:
+            print(f"Error {e}") 
+            
 
 
 # # Example Usage
 if __name__ == "__main__":
 
-    anime_title = 'Fullmetal Alchemist: Brotherhood'
+    anime_title = 'Gintama'
     anime_info = asyncio.run(ValidateAnime.validate(anime_title))
     # if anime_info:
     #     print(f"Title: {anime_info['title']}")
