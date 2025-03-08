@@ -3,7 +3,7 @@ from flask import Flask
 from flask_cors import CORS
 from app.config import Config
 from app.extensions import db, migrate
-from app.models import UserRecommendation, PopularRecommendation
+
 from app.routes import main_bp
 
 def create_app():
@@ -11,9 +11,9 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": "*"}})
     app.config.from_object(Config)
     app.register_blueprint(main_bp)
-    # # Initialize database and migrations
-    # db.init_app(app)
-    # migrate.init_app(app, db)
+    # Initialize database and migrations
+    db.init_app(app)
+    migrate.init_app(app, db)
 
 
     return app
