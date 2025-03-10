@@ -7,21 +7,7 @@ import { useState, useRef, useEffect } from "react";
 
 // StarRating component with toggle behavior.
 // Clicking a star that’s already selected toggles off (rating becomes 0).
-const StarRating = ({ id, rating, onRatingChange }) => {
-  return (
-    <div>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          style={{ cursor: "pointer", fontSize: "1.5rem" }}
-          onClick={() => onRatingChange(id, rating === star ? 0 : star)}
-        >
-          {star <= ratingsData[id].rating ? "★" : "☆"}
-        </span>
-      ))}
-    </div>
-  );
-};
+
 
 const ResultsPage = () => {
   const { sharedData } = useData();
@@ -32,6 +18,24 @@ const ResultsPage = () => {
   // State to hold ratings and comments.
   // Structure: { [id]: { rating: number, comment: string } }
   const [ratingsData, setRatingsData] = useState({});
+  
+
+  const StarRating = ({ id, rating, onRatingChange }) => {
+
+    return (
+      <div>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            style={{ cursor: "pointer", fontSize: "1.5rem" }}
+            onClick={() => onRatingChange(id, rating === star ? 0 : star)}
+          >
+            {star <= rating ? "★" : "☆"}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   // Callback ref that assigns the element and checks if all refs are collected.
   const setCardRef = (el, index) => {
@@ -123,7 +127,7 @@ const ResultsPage = () => {
       </div>
     );
   }
-
+  console.log(ratingsData)
   return (
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
