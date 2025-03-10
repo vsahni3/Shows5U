@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import chromadb
 import numpy as np
 from crud import *
+from scipy.special import softmax
 from app.models import UserRecommendation
 from chromadb.config import Settings
 load_dotenv()
@@ -53,7 +54,7 @@ def retrieve_embeddings(items: list[tuple[str, str]]):
 
 
 
-def rank_recommendations(pref_embeddings: list[list[float]], pref_ratings: list[int], rec_embeddings: list[list[float]], k: int = 5, alpha: float = 0.75):
+def rank_recommendations(pref_embeddings: list[list[float]], pref_ratings: list[int], rec_embeddings: list[list[float]], k: int = 10, alpha: float = 0.75):
 
 
     pref_embeddings = np.array(pref_embeddings) # (P, D) -> Preferences
@@ -80,16 +81,21 @@ def rank_recommendations(pref_embeddings: list[list[float]], pref_ratings: list[
     top_k_indices = np.argsort(final_scores)[::-1][:k]
     top_k_scores = final_scores[top_k_indices]
 
-    return list(zip(top_k_indices, top_k_scores))
+    return top_k_indices, top_k_scores
 
 
-def give_recommendations(rec_descriptions: list[str], user_id: str, k: int = 5):
+def give_recommendations(recommendations: list, user_id: str, k: int = 10):
     preferences = get_user_recommendations(user_id, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type))
     pref_ratings = [row.rating for row in preferences]
     pref_embeddings = retrieve_embeddings(items=[(row.title, row.content_type) for row in preferences])
 
+    rec_descriptions = [rec['description'] for rec in recommendations]
     rec_embeddings = get_embeddings(rec_descriptions)
-    return rank_recommendations(pref_embeddings, pref_ratings, rec_embeddings, k)
+    top_k_indices, top_k_scores = rank_recommendations(pref_embeddings, pref_ratings, rec_embeddings, k)
+    norm_scores = softmax(top_k_scores) * 100
+    final_recs = [recommendations[index] | {"score": norm_scores[i]} for i, index in enumerate(top_k_indices)]
+    return final_recs
+    
 
     
     

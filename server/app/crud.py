@@ -9,7 +9,7 @@ def upsert_popular_recommendations(content_type: str, entries: list):
     Inserts or updates popular recommendations based on the given content type and entries.
 
     :param content_type: The type of content ('anime', 'movie', 'series').
-    :param entries: List of titles to insert or update.
+    :param entries: List of results to insert or update.
     """
     current_time = datetime.utcnow()
     try:
