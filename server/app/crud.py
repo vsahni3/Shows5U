@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import insert, select, delete
+from sqlalchemy.dialects.postgresql import insert  # PostgreSQL-specific import
+from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import PopularRecommendation, UserRecommendation
@@ -14,17 +15,21 @@ def upsert_popular_recommendations(content_type: str, entries: list):
     current_time = datetime.utcnow()
     try:
         for entry in entries:
-            title = entry['title']
-            stmt = insert(PopularRecommendation).values(
-                title=title,
-                content_type=content_type,
-                recommendation_count=1,
-                last_recommended=current_time
-            ).on_conflict_do_update(
-                index_elements=['title', 'content_type'],
-                set_=dict(
-                    recommendation_count=PopularRecommendation.recommendation_count + 1,
-                    last_recommended=current_time
+            title = entry["title"]
+            stmt = (
+                insert(PopularRecommendation)
+                .values(
+                    title=title,
+                    content_type=content_type,
+                    recommendation_count=1,
+                    last_recommended=current_time,
+                )
+                .on_conflict_do_update(
+                    index_elements=["title", "content_type"],
+                    set_={
+                        "recommendation_count": PopularRecommendation.recommendation_count + 1,
+                        "last_recommended": current_time,
+                    },
                 )
             )
             db.session.execute(stmt)
@@ -71,27 +76,30 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
     :param rating: Optional rating given by the user.
     """
     try:
-        stmt = insert(UserRecommendation).values(
-            user_id=user_id,
-            title=title,
-            content_type=content_type,
-            comment=comment,
-            seen=seen,
-            rating=rating
-        ).on_conflict_do_update(
-            index_elements=['user_id', 'title', 'content_type'],
-            set_={
-                "comment": comment,
-                "seen": seen,
-                "rating": rating
-            }
+
+        update_values = {"comment": comment, "seen": seen, "rating": rating}
+        update_values = {key: value for key, value in update_values.items() if value}
+
+        stmt = (
+            insert(UserRecommendation)
+            .values(
+                user_id=user_id,
+                title=title,
+                content_type=content_type,
+                comment=comment,
+                seen=seen,
+                rating=rating,
+            )
+            .on_conflict_do_update(
+                index_elements=["user_id", "title", "content_type"],
+                set_=update_values,
+            )
         )
         db.session.execute(stmt)
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
         raise
-
 
 def get_user_recommendations(user_id: str, cols: tuple = (UserRecommendation,)):
     """
@@ -103,4 +111,4 @@ def get_user_recommendations(user_id: str, cols: tuple = (UserRecommendation,)):
     """
 
     stmt = select(*cols).where(UserRecommendation.user_id == user_id)
-    return db.session.execute(stmt).all()
+    return db.session.scalars(stmt).all()

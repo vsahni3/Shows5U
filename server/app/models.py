@@ -1,19 +1,21 @@
 from datetime import datetime
 from app.extensions import db
 
-# ✅ Table 1: User-Specific Recommendations (Composite Primary Key)
+# ✅ Table 1: User-Specific Recommendations (Composite Primary Key + Unique Constraint)
 class UserRecommendation(db.Model):
     __tablename__ = "user_recommendations"
 
-    user_id = db.Column(db.String(255), primary_key=True, nullable=False)
-    title = db.Column(db.String(255), primary_key=True, nullable=False)
-    content_type = db.Column(db.String(50), primary_key=True, nullable=False)
+    user_id = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(50), nullable=False)
     comment = db.Column(db.String(255), nullable=True)
     description = db.Column(db.String(1023), nullable=False)
     seen = db.Column(db.Boolean, default=False)
     rating = db.Column(db.Float, nullable=False)  
     
     __table_args__ = (
+        db.PrimaryKeyConstraint("user_id", "title", "content_type", name="user_recommendations_pk"),  # Composite primary key
+        db.UniqueConstraint("user_id", "title", "content_type", name="unique_user_recommendation"),  # Explicit unique constraint
         db.CheckConstraint(
             "content_type IN ('anime', 'movie', 'series')",
             name="check_content_type"
@@ -21,22 +23,23 @@ class UserRecommendation(db.Model):
     )
 
     def __repr__(self):
-        return f"<UserRecommendation {self.user_id} -> {self.anime_title}>"
+        return f"<UserRecommendation {self.user_id} -> {self.title}>"
 
 
 
 
-# ✅ Table 2: Global Popular Recommendations
+# ✅ Table 2: Global Popular Recommendations (Composite Primary Key + Unique Constraint)
 class PopularRecommendation(db.Model):
     __tablename__ = "popular_recommendations"
 
-    title = db.Column(db.String(255), primary_key=True)  # Unique title
-    content_type = db.Column(db.String(50), nullable=False, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(50), nullable=False)
     recommendation_count = db.Column(db.Integer, default=1)
     last_recommended = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
-    
     __table_args__ = (
+        db.PrimaryKeyConstraint("title", "content_type", name="popular_recommendations_pk"),  # Composite primary key
+        db.UniqueConstraint("title", "content_type", name="unique_popular_recommendation"),  # Explicit unique constraint
         db.CheckConstraint(
             "content_type IN ('anime', 'movie', 'series')",
             name="check_content_type"
@@ -44,4 +47,4 @@ class PopularRecommendation(db.Model):
     )
 
     def __repr__(self):
-        return f"<PopularRecommendation {self.anime_title} ({self.recommendation_count} recs)>"
+        return f"<PopularRecommendation {self.title} ({self.recommendation_count} recs)>"

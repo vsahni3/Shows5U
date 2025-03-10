@@ -1,32 +1,50 @@
 import cohere
 import os 
 from dotenv import load_dotenv
-import chromadb
 import numpy as np
-from crud import *
+from app.crud import *
 from scipy.special import softmax
 from app.models import UserRecommendation
-from chromadb.config import Settings
+from pinecone import Pinecone, ServerlessSpec
 load_dotenv()
 # can later build model like transformer, takes in preferenes + ratings and current title and gives score
 # for training we use titles which also have user ranking associated to eval score
 # Initialize Cohere client
+
+def create_pinecone_index():
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    index_name = 'embeddings'
+    embedding_dimension = 4096  
+
+    existing_indexes = [idx.name for idx in pc.list_indexes()]
+    if index_name not in existing_indexes:
+        pc.create_index(
+            name=index_name,
+            dimension=embedding_dimension,
+            metric='cosine', 
+            spec=ServerlessSpec(
+                cloud='aws',
+                region='us-east-1'
+            )
+        )
+    index = pc.Index(index_name)
+    return index
+
 co = cohere.Client(os.getenv('COHERE_API_KEY'))
-client = chromadb.Client(Settings())
-collection = client.create_collection(name='embeddings')
+pc = create_pinecone_index()
+
+
+
 def get_embeddings(descriptions):
     response = co.embed(
-        texts=[descriptions],
+        texts=descriptions,
         model='embed-english-v2.0',
         truncate='END'
     )
-    return response.embeddings[0]
+    return response.embeddings
 
 def store_embeddings(content_types: list[str], titles: list[str], descriptions: list[str]):
-
     embeddings = get_embeddings(descriptions)
-    vectors = []
-
     vectors = [
         {
             "id": f"{content_types[i]}_{titles[i]}",
@@ -34,28 +52,23 @@ def store_embeddings(content_types: list[str], titles: list[str], descriptions: 
         }
         for i in range(len(embeddings))
     ]
-    collection.upsert(vectors=vectors)
+    pc.upsert(vectors=vectors)
 
 
 def retrieve_embeddings(items: list[tuple[str, str]]):
-    """
-    Retrieves embeddings for a given list of (title, content_type) tuples in the same order.
-
-    :param items: List of tuples (title, content_type).
-    :return: List of embeddings corresponding to the input order. Returns None if an embedding is not found.
-    """
     ids = [f"{content_type}_{title}" for title, content_type in items]
-    
-    results = collection.fetch(ids=ids)
-
-    embeddings = [results.get(item_id, {}).get("values", None) for item_id in ids]
-    
+    response = pc.fetch(ids=ids)
+    embeddings = [response['vectors'][item_id]['values'] for item_id in ids if item_id in response['vectors']]
+    assert len(embeddings) == len(ids)
     return embeddings
 
 
 
 def rank_recommendations(pref_embeddings: list[list[float]], pref_ratings: list[int], rec_embeddings: list[list[float]], k: int = 10, alpha: float = 0.75):
-
+    # score gets softmaxed anyways
+    if not pref_embeddings or not pref_ratings:
+        length = min(len(rec_embeddings), k)
+        return list(range(length)), [1] * length
 
     pref_embeddings = np.array(pref_embeddings) # (P, D) -> Preferences
     pref_ratings = np.array(pref_ratings) # (P,)   -> Ranks
@@ -98,5 +111,5 @@ def give_recommendations(recommendations: list, user_id: str, k: int = 10):
     
 
     
-    
-    
+if __name__ == "__main__":
+    print(rank_recommendations([], [], [[1, 2], [3, 4]]))
