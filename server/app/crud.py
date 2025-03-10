@@ -59,12 +59,12 @@ def delete_old_recommendations(date_threshold: datetime):
     db.session.commit()
     return result.rowcount
 
-def upsert_user_recommendation(user_id: str, anime_title: str, content_type: str, comment: str = None, seen: bool = None, rating: float = None):
+def upsert_user_recommendation(user_id: str, title: str, content_type: str, rating: float, comment: str = None, seen: bool = None):
     """
     Inserts or updates a user recommendation. Updates comment, seen, and rating if the record exists.
 
     :param user_id: ID of the user.
-    :param anime_title: Title of the anime/movie/series.
+    :param title: Title of the anime/movie/series.
     :param content_type: Type of content ('anime', 'movie', 'series').
     :param comment: Optional comment from the user.
     :param seen: Boolean indicating if the user has seen it.
@@ -73,13 +73,13 @@ def upsert_user_recommendation(user_id: str, anime_title: str, content_type: str
     try:
         stmt = insert(UserRecommendation).values(
             user_id=user_id,
-            anime_title=anime_title,
+            title=title,
             content_type=content_type,
             comment=comment,
             seen=seen,
             rating=rating
         ).on_conflict_do_update(
-            index_elements=['user_id', 'anime_title', 'content_type'],
+            index_elements=['user_id', 'title', 'content_type'],
             set_={
                 "comment": comment,
                 "seen": seen,
@@ -93,12 +93,14 @@ def upsert_user_recommendation(user_id: str, anime_title: str, content_type: str
         raise
 
 
-def get_user_recommendations(user_id: str):
+def get_user_recommendations(user_id: str, cols: tuple = (UserRecommendation,)):
     """
-    Retrieves all recommendations for a given user.
+    Retrieves specified columns for all recommendations of a given user.
 
     :param user_id: ID of the user.
-    :return: List of UserRecommendation objects.
+    :param cols: List of columns to retrieve (default is all).
+    :return: List of results with specified columns.
     """
-    stmt = select(UserRecommendation).where(UserRecommendation.user_id == user_id)
-    return db.session.scalars(stmt).all()
+
+    stmt = select(*cols).where(UserRecommendation.user_id == user_id)
+    return db.session.execute(stmt).all()
