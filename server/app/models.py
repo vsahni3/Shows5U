@@ -34,8 +34,12 @@ class PopularRecommendation(db.Model):
 
     title = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(50), nullable=False)
+    
     recommendation_count = db.Column(db.Integer, default=1)
     last_recommended = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    image_url = db.Column(db.String(500), nullable=False)  
+    url = db.Column(db.String(500), nullable=False)
     
     __table_args__ = (
         db.PrimaryKeyConstraint("title", "content_type", name="popular_recommendations_pk"),  # Composite primary key

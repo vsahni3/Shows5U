@@ -7,48 +7,60 @@ from app.models import PopularRecommendation, UserRecommendation
 
 def upsert_popular_recommendations(content_type: str, entries: list):
     """
-    Inserts or updates popular recommendations based on the given content type and entries.
+    Bulk inserts or updates popular recommendations for the given content type.
 
     :param content_type: The type of content ('anime', 'movie', 'series').
-    :param entries: List of results to insert or update.
+    :param entries: List of dictionaries containing keys "title", "image_url", and "url".
     """
     current_time = datetime.utcnow()
     try:
-        for entry in entries:
-            title = entry["title"]
-            stmt = (
-                insert(PopularRecommendation)
-                .values(
-                    title=title,
-                    content_type=content_type,
-                    recommendation_count=1,
-                    last_recommended=current_time,
-                )
-                .on_conflict_do_update(
-                    index_elements=["title", "content_type"],
-                    set_={
-                        "recommendation_count": PopularRecommendation.recommendation_count + 1,
-                        "last_recommended": current_time,
-                    },
-                )
+
+        values = [
+            {
+                "title": entry["title"],
+                "image_url": entry["image_url"],
+                "url": entry["url"],
+                "content_type": content_type,
+                "recommendation_count": 1,
+                "last_recommended": current_time,
+            }
+            for entry in entries
+        ]
+
+        stmt = (
+            insert(PopularRecommendation)
+            .values(values)
+            .on_conflict_do_update(
+                index_elements=["title", "content_type"],
+                set_={
+                    "recommendation_count": PopularRecommendation.recommendation_count + 1,
+                    "last_recommended": current_time,
+                },
             )
-            db.session.execute(stmt)
+        )
+        db.session.execute(stmt)
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
         raise
 
-def get_top_n_popular_titles(n: int):
-    """
-    Retrieves the top N most popular titles based on recommendation count.
 
+def get_top_n_popular_titles(content_type: str, n: int = 8):
+    """
+    Retrieves the top N most popular titles based on recommendation count, filtered by content type.
+
+    :param content_type: The type of content to filter by (e.g., "anime", "movie", "series").
     :param n: Number of top titles to retrieve.
     :return: List of PopularRecommendation objects.
     """
-    stmt = select(PopularRecommendation).order_by(
+    stmt = select(PopularRecommendation).where(
+        PopularRecommendation.content_type == content_type
+    ).order_by(
         PopularRecommendation.recommendation_count.desc()
     ).limit(n)
+    
     return db.session.scalars(stmt).all()
+
 
 def delete_old_recommendations(date_threshold: datetime):
     """

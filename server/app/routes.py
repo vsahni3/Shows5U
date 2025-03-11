@@ -19,8 +19,8 @@ def respond():
     upsert_popular_recommendations(content_type, recommended_results)
     return jsonify({"results": recommended_results})
 
-@main_bp.route("/add_recommendation", methods=["POST"])
-def add_recommendation():
+@main_bp.route("/preference", methods=["POST"])
+def add_preference():
     """
     API endpoint to add or update a user recommendation.
     """
@@ -40,3 +40,18 @@ def add_recommendation():
     store_embeddings([content_type], [title], [description_or_comment])
 
     return jsonify({"message": "User recommendation added/updated successfully"})
+
+@main_bp.route("/trending", methods=["POST"])
+def get_trending():
+    """
+    API endpoint to add or update a user recommendation.
+    """
+    data = request.get_json()
+    
+    content_type = data["content_type"]
+
+    popular = get_top_n_popular_titles(content_type)
+    print(popular)
+    ef
+
+    return jsonify({"results": popular})
