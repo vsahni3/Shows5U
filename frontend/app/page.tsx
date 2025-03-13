@@ -1,33 +1,106 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { Card, Flex, Heading, Button } from '@radix-ui/themes';
+import Link from 'next/link';
+import { Flex, Heading, Button } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import { useData } from './context/dataContext';
 import Header from './components/Header';
+import { createClient } from '@/app/utils/supabase/client';
+
+interface TrendingResult {
+  title: string;
+  image_url: string;
+  url: string;
+}
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [contentType, setContentType] = useState('anime'); // "anime", "movie", "series"
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [cachedTrendingResults, setCachedTrendingResults] = useState<{
+    anime?: TrendingResult[];
+    movie?: TrendingResult[];
+    series?: TrendingResult[];
+  }>({});
+  const [contentType, setContentType] = useState<'anime' | 'movie' | 'series'>('anime');
   const router = useRouter();
+  const [email, setEmail] = useState<string>('');
   const { setSharedData } = useData();
 
-  // Handle search submit
+  // Refs for trending result cards and state for uniform height.
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [maxHeight, setMaxHeight] = useState<number>(0);
+
+  const trendingContent = cachedTrendingResults[contentType] || [];
+
+  // Callback ref to capture each card's element and calculate uniform height.
+  const setCardRef = (el: HTMLDivElement | null, index: number): void => {
+    cardRefs.current[index] = el;
+    if (cardRefs.current.filter((ref) => ref !== null).length === trendingContent.length) {
+      const heights = cardRefs.current
+        .filter((ref): ref is HTMLDivElement => ref !== null)
+        .map((ref) => ref.clientHeight);
+      const newMaxHeight = Math.max(...heights);
+      if (newMaxHeight !== maxHeight) {
+        setMaxHeight(newMaxHeight);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const supabase = createClient();
+    async function fetchUserEmail() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setEmail(user.email || '');
+      }
+    }
+    fetchUserEmail();
+  }, []);
+
+  useEffect(() => {
+    async function fetchTrending() {
+      if (cachedTrendingResults[contentType]) return; // If cached, no need to fetch
+  
+      try {
+        const response = await fetch('http://127.0.0.1:5000/trending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content_type: contentType }),
+        });
+        const data = await response.json();
+  
+        // Store results in cache
+        setCachedTrendingResults((prevCache) => ({
+          ...prevCache,
+          [contentType]: data['results'],
+        }));
+      } catch (error) {
+        console.error('Fetching trending content failed:', error);
+      }
+    }
+  
+    fetchTrending();
+  }, [contentType]);
+
+  // Handle search form submission.
   const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       const response = await fetch('http://127.0.0.1:5000/respond', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, content_type: contentType }),
+        body: JSON.stringify({ query: searchQuery, content_type: contentType, email }),
       });
-
       const data = await response.json();
-      setSharedData(data['results']);
+      setSharedData({
+        results: data['results'],
+        contentType, // Save the content type
+      });
       router.push('/results');
     } catch (error) {
       console.error('Search failed:', error);
@@ -35,7 +108,7 @@ export default function Home() {
       setIsLoading(false);
     }
   };
-
+  
   return (
     <>
       <Head>
@@ -49,12 +122,7 @@ export default function Home() {
         <Header isLoading={isLoading} />
 
         {/* Central Search Section */}
-        <Flex
-          direction="column"
-          align="center"
-          justify="center"
-          className="flex-1 w-full mt-32 px-4"
-        >
+        <Flex direction="column" align="center" justify="center" className="flex-1 w-full mt-32 px-4">
           {/* Title */}
           <Heading
             as="h1"
@@ -66,22 +134,20 @@ export default function Home() {
 
           {/* Selection Buttons */}
           <div className="mb-8 flex gap-1 bg-gray-100 p-1 rounded-full shadow-inner">
-            {["anime", "movie", "series"].map((type) => (
+            {(['anime', 'movie', 'series'] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setContentType(type)}
-                className={`py-2 px-6 rounded-full font-medium transition-all duration-200
-                  ${
-                    contentType === type
-                      ? "bg-blue-500 text-white shadow-md"
-                      : "text-gray-600 hover:bg-gray-200"
-                  }`}
+                className={`py-2 px-6 rounded-full font-medium transition-all duration-200 ${
+                  contentType === type
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>
-
 
           {/* Search Bar */}
           <form
@@ -91,7 +157,7 @@ export default function Home() {
             <input
               type="text"
               name="search"
-              placeholder={`Enter ${contentType == 'anime' ? 'an' : 'a'} ${contentType} query...`}
+              placeholder={`Enter ${contentType === 'anime' ? 'an' : 'a'} ${contentType} query...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search"
@@ -108,33 +174,36 @@ export default function Home() {
         </Flex>
 
         {/* Trending Section */}
-        <div className="max-w-[1400px] mx-auto px-4 mt-20 mb-16">
-          <Heading
-            as="h2"
-            size="5"
-            className="text-center text-gray-800 font-semibold text-2xl mb-8"
-          >
+        <div className="max-w-[1400px] mx-auto px-4 mt-10 mb-16">
+          <Heading as="h2" size="5" className="text-center text-gray-800 font-semibold text-2xl mb-8">
             Trending {contentType.charAt(0).toUpperCase() + contentType.slice(1)}
           </Heading>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-            {Array.from({ length: 12 }).map((_, index) => (
-              <Card
-                key={index}
-                className="w-full h-80 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all bg-white border border-neutral-200"
-              >
-                <img
-                  src={
-                    contentType === "anime"
-                      ? "/luffy.png"
-                      : contentType === "movie"
-                      ? "/luffy.png"
-                      : "/luffy.png"
-                  }
-                  alt={`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </Card>
-            ))}
+            {trendingContent.length > 0 ? (
+              trendingContent.map((result, index) => (
+                <Link key={index} href={result.url} target="_blank" rel="noopener noreferrer">
+                  <div
+                    ref={(el) => setCardRef(el, index)}
+                    className="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition flex flex-col"
+                    style={{ height: maxHeight ? maxHeight : 'auto' }}
+                  >
+                    <img
+                      src={result.image_url}
+                      alt={result.title}
+                      className="w-auto h-80 object-cover"
+                      loading="lazy"
+                    />
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden">
+                        {result.title}
+                      </h2>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-600">No trending results available.</p>
+            )}
           </div>
         </div>
       </div>

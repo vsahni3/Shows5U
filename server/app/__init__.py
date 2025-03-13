@@ -8,12 +8,17 @@ from app.routes import main_bp
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app, support_credentials=True, resources={r"/*": {"origins": "*"}})
     app.config.from_object(Config)
     app.register_blueprint(main_bp)
     # Initialize database and migrations
     db.init_app(app)
     migrate.init_app(app, db)
+    
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.session.remove()
+
 
 
     return app
