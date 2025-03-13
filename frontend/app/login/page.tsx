@@ -5,7 +5,7 @@ import { Button, Card, Flex, Heading, TextField, Text } from '@radix-ui/themes';
 import { useState, useEffect } from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { login, signup, signInWithGoogle } from "./actions";
-import { createClient } from '@/app/utils/supabase/client';  // Add this import
+import { createClient } from '@/app/utils/supabase/client';  
 
 
 export default function LoginPage() {
@@ -138,3 +138,8 @@ export default function LoginPage() {
     </Flex>
   );
 }
+
+
+
+
+

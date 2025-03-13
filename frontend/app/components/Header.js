@@ -1,4 +1,6 @@
 import { Flex, Heading, Button } from "@radix-ui/themes";
+import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
 const Header = ({ isLoading }) => {
   const router = useRouter();
@@ -15,12 +17,16 @@ const Header = ({ isLoading }) => {
           alt="Logo"
           className="w-16 h-16 object-contain object-cover rounded-full"
         />
+        <Link href='/'>
         <Heading size="4" className="text-gray-700 font-medium">
           Shows5U
         </Heading>
+        </Link>
+        <Link href='/personal'>
         <Heading size="4" className="text-gray-700 font-medium">
           Personal
         </Heading>
+        </Link>
       </Flex>
 
       {/* Sign Out Button */}
