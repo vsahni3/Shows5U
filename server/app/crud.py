@@ -4,6 +4,8 @@ from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import PopularRecommendation, UserRecommendation
+from sqlalchemy.orm import load_only
+
 
 def upsert_popular_recommendations(content_type: str, entries: list):
     """
@@ -45,7 +47,7 @@ def upsert_popular_recommendations(content_type: str, entries: list):
         raise
 
 
-def get_top_n_popular_titles(content_type: str, n: int = 8):
+def get_top_n_popular_titles(content_type: str, n: int = 12):
     """
     Retrieves the top N most popular titles based on recommendation count, filtered by content type.
 
@@ -76,7 +78,7 @@ def delete_old_recommendations(date_threshold: datetime):
     db.session.commit()
     return result.rowcount
 
-def upsert_user_recommendation(user_id: str, title: str, content_type: str, rating: float, comment: str = None, seen: bool = None):
+def upsert_user_recommendation(user_id: str, title: str, content_type: str, rating: float, url: str, image_url: str, comment: str = None, seen: bool = None):
     """
     Inserts or updates a user recommendation. Updates comment, seen, and rating if the record exists.
 
@@ -91,7 +93,7 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
 
         update_values = {"comment": comment, "seen": seen, "rating": rating}
         update_values = {key: value for key, value in update_values.items() if value}
-
+        
         stmt = (
             insert(UserRecommendation)
             .values(
@@ -99,6 +101,8 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
                 title=title,
                 content_type=content_type,
                 comment=comment,
+                image_url=image_url,
+                url=url,
                 seen=seen,
                 rating=rating,
             )
@@ -113,14 +117,23 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
         db.session.rollback()
         raise
 
-def get_user_recommendations(user_id: str, cols: tuple = (UserRecommendation,)):
+
+def get_user_recommendations(user_id: str, cols: tuple = tuple()):
     """
-    Retrieves specified columns for all recommendations of a given user.
+    Retrieves full row objects for all recommendations of a given user,
+    but only loads the attributes specified in `cols`.
 
     :param user_id: ID of the user.
-    :param cols: List of columns to retrieve (default is all).
-    :return: List of results with specified columns.
+    :param cols: Tuple of columns to retrieve (default is all columns of UserRecommendation).
+    :return: List of full ORM row objects with only the specified attributes loaded.
     """
 
-    stmt = select(*cols).where(UserRecommendation.user_id == user_id)
-    return db.session.scalars(stmt).all()
+    # Ensure we always query for full ORM objects
+    stmt = select(UserRecommendation).where(UserRecommendation.user_id == user_id)
+
+    # If specific columns are requested, apply load_only to optimize query
+    if cols:
+        stmt = stmt.options(load_only(*cols))
+
+    return db.session.execute(stmt).scalars().all()
+

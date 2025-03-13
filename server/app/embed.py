@@ -13,11 +13,11 @@ load_dotenv()
 
 def create_pinecone_index():
     pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+
     index_name = 'embeddings'
     embedding_dimension = 4096  
 
-    existing_indexes = [idx.name for idx in pc.list_indexes()]
-    if index_name not in existing_indexes:
+    if not pc.has_index(index_name):
         pc.create_index(
             name=index_name,
             dimension=embedding_dimension,
@@ -31,8 +31,7 @@ def create_pinecone_index():
     return index
 
 co = cohere.Client(os.getenv('COHERE_API_KEY'))
-pc = create_pinecone_index()
-
+pc_index = create_pinecone_index()
 
 
 def get_embeddings(descriptions):
@@ -52,13 +51,18 @@ def store_embeddings(content_types: list[str], titles: list[str], descriptions: 
         }
         for i in range(len(embeddings))
     ]
-    pc.upsert(vectors=vectors)
+
+    pc_index.upsert(vectors=vectors)
+
+
 
 
 def retrieve_embeddings(items: list[tuple[str, str]]):
+    if not items:
+        return []
     ids = [f"{content_type}_{title}" for title, content_type in items]
-    response = pc.fetch(ids=ids)
-    embeddings = [response['vectors'][item_id]['values'] for item_id in ids if item_id in response['vectors']]
+    response = pc_index.fetch(ids=ids)
+    embeddings = [response.vectors[item_id].values for item_id in ids]
     assert len(embeddings) == len(ids)
     return embeddings
 
@@ -97,10 +101,11 @@ def rank_recommendations(pref_embeddings: list[list[float]], pref_ratings: list[
     return top_k_indices, top_k_scores
 
 
-def give_recommendations(recommendations: list, user_id: str, k: int = 10):
+def give_recommendations(recommendations: list, user_id: str, k: int = 20):
     preferences = get_user_recommendations(user_id, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type))
     pref_ratings = [row.rating for row in preferences]
     pref_embeddings = retrieve_embeddings(items=[(row.title, row.content_type) for row in preferences])
+
 
     rec_descriptions = [rec['description'] for rec in recommendations]
     rec_embeddings = get_embeddings(rec_descriptions)
@@ -110,6 +115,13 @@ def give_recommendations(recommendations: list, user_id: str, k: int = 10):
     return final_recs
     
 
+def delete_pinecone(pc_index):
+    pc_index.delete(delete_all=True)
     
 if __name__ == "__main__":
-    print(rank_recommendations([], [], [[1, 2], [3, 4]]))
+
+    pc_index = create_pinecone_index()
+    
+    print(pc_index.describe_index_stats())
+
+    
