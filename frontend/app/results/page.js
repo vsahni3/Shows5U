@@ -2,17 +2,27 @@
 
 import Header from "../components/Header";
 import Link from "next/link";
-import { useData } from "../context/dataContext";
 import { useState, useEffect } from "react";
 import { createClient } from '@/app/utils/supabase/client';
 
 const ResultsPage = () => {
-  const { sharedData } = useData();
-  const { results, contentType } = sharedData;
+  const [results, setResults] = useState([]);
+  const [contentType, setContentType] = useState('');
+
 
   // Global state to hold ratings and comments
   const [ratingsData, setRatingsData] = useState({});
   const [email, setEmail] = useState('');
+
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('searchResults');
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      setResults(parsedData.results || []);
+      setContentType(parsedData.contentType || '');
+    }
+  }, []);
 
   useEffect(() => {
       const supabase = createClient();
@@ -117,12 +127,12 @@ const ResultsPage = () => {
                       loading="lazy"
                     />
                   </div>
-                  <div className="p-4">
+                  <div className="p-2">
                   <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
                       {result.title}
 
                     </h2>
-                    <p className="pb-4 text-sm text-blue-600 italic">
+                    <p className="text-sm text-blue-600 italic">
                       Confidence: {result.score ? `${result.score.toFixed(2)}%` : "N/A"}
                     </p>
                   </div>

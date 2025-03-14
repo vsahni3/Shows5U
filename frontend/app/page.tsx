@@ -26,7 +26,18 @@ export default function Home() {
   const [contentType, setContentType] = useState<'anime' | 'movie' | 'series'>('anime');
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
-  const { setSharedData } = useData();
+  interface SharedData {
+    trendingResults: {
+      anime?: TrendingResult[];
+      movie?: TrendingResult[];
+      series?: TrendingResult[];
+    };
+  }
+  
+  const { sharedData, setSharedData } = useData() as { 
+    sharedData: SharedData; 
+    setSharedData: React.Dispatch<React.SetStateAction<SharedData>>; 
+  };
 
   // Refs for trending result cards and state for uniform height.
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -63,9 +74,19 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchTrending() {
-      if (cachedTrendingResults[contentType]) return; // If cached, no need to fetch
+      // 2 levels of cache
+      if (cachedTrendingResults[contentType]) return;
+      if (sharedData.trendingResults?.[contentType]) {
+        setCachedTrendingResults((prevCache) => ({
+          ...prevCache,
+          [contentType]: sharedData.trendingResults[contentType],
+        }));
+        return; // Use cached results from shared data
+      }
+
   
       try {
+        console.log("fetching");
         const response = await fetch('http://127.0.0.1:5000/trending', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -77,6 +98,10 @@ export default function Home() {
         setCachedTrendingResults((prevCache) => ({
           ...prevCache,
           [contentType]: data['results'],
+        }));
+        setSharedData((prev) => ({
+          ...prev,
+          trendingResults: { ...prev.trendingResults, [contentType]: data['results'] }
         }));
       } catch (error) {
         console.error('Fetching trending content failed:', error);
@@ -97,10 +122,10 @@ export default function Home() {
         body: JSON.stringify({ query: searchQuery, content_type: contentType, email }),
       });
       const data = await response.json();
-      setSharedData({
+      localStorage.setItem('searchResults', JSON.stringify({
         results: data['results'],
-        contentType, // Save the content type
-      });
+        contentType,
+      }));
       router.push('/results');
     } catch (error) {
       console.error('Search failed:', error);
