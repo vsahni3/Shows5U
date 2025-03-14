@@ -9,9 +9,10 @@ class UserRecommendation(db.Model):
     title = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(50), nullable=False)
     comment = db.Column(db.String(255), nullable=True)
-    description = db.Column(db.String(1023), nullable=False)
     seen = db.Column(db.Boolean, default=False)
     rating = db.Column(db.Float, nullable=False)  
+    image_url = db.Column(db.String(500), nullable=False)  
+    url = db.Column(db.String(500), nullable=False)
     
     __table_args__ = (
         db.PrimaryKeyConstraint("user_id", "title", "content_type", name="user_recommendations_pk"),  # Composite primary key
