@@ -78,7 +78,7 @@ def delete_old_recommendations(date_threshold: datetime):
     db.session.commit()
     return result.rowcount
 
-def upsert_user_recommendation(user_id: str, title: str, content_type: str, rating: float, url: str, image_url: str, comment: str = None, seen: bool = None):
+def upsert_user_recommendation(user_id: str, title: str, content_type: str, rating: float, url: str, image_url: str, genres: str, comment: str = None, seen: bool = None):
     """
     Inserts or updates a user recommendation. Updates comment, seen, and rating if the record exists.
 
@@ -99,6 +99,7 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
             .values(
                 user_id=user_id,
                 title=title,
+                genres=genres,
                 content_type=content_type,
                 comment=comment,
                 image_url=image_url,

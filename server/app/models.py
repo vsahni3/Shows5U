@@ -9,6 +9,7 @@ class UserRecommendation(db.Model):
     title = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(50), nullable=False)
     comment = db.Column(db.String(255), nullable=True)
+    genres = db.Column(db.String(255), nullable=True)
     seen = db.Column(db.Boolean, default=False)
     rating = db.Column(db.Float, nullable=False)  
     image_url = db.Column(db.String(500), nullable=False)  
