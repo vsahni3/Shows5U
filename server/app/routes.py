@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from app.llm import generate
 from app.validate_handler import validate_titles
 from app.crud import *
-from app.embed import give_recommendations, store_embeddings
+from app.recommend import give_recommendations, store_embeddings
 
 # Create a Blueprint
 main_bp = Blueprint("main", __name__)
@@ -14,9 +14,9 @@ def respond():
     content_type = data['content_type']
     email = data['email']
     results = generate(query, content_type)
-    print(results)
+
     valid_results = validate_titles(content_type, results)
-    print(valid_results)
+
     recommended_results = give_recommendations(valid_results, email)
     upsert_popular_recommendations(content_type, recommended_results)
     return jsonify({"results": recommended_results})
@@ -33,14 +33,16 @@ def add_preference():
     description = data["description"]
     content_type = data["content_type"]
     image_url = data["image_url"]
+    genres = data["genres"]
     url = data["url"]
     rating = data["rating"] 
     comment = data.get("comment")  # Optional
     seen = data.get("seen", False)  # Optional
 
-    upsert_user_recommendation(user_id=email, title=title, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
+    upsert_user_recommendation(user_id=email, title=title, genres=genres, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
     
-    description_or_comment = comment if comment else description
+    # description_or_comment = comment if comment else description
+    description_or_comment = description
     store_embeddings([content_type], [title], [description_or_comment])
 
     return jsonify({"message": "User recommendation added/updated successfully"})

@@ -22,7 +22,7 @@ class ValidateMovies(Validator):
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    print(data)
+
                     if data.get("Response") == "True":
                         poster_url = data.get("Poster")
                         return {
