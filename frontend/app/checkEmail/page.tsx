@@ -14,7 +14,7 @@ export default function CheckEmailPage() {
         <Flex direction="column" gap="4" p="4">
           <Heading size="6">Check Your Email</Heading>
           <Text size="3" color="gray">
-            We've sent you a confirmation email. Please verify your email address to continue.
+            We have sent you a confirmation email. Please verify your email address to continue.
           </Text>
         </Flex>
       </Card>

@@ -3,7 +3,7 @@
 
 import { Button, Card, Flex, Heading, TextField, Text } from '@radix-ui/themes';
 import { useState, useEffect } from 'react';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { login, signup, signInWithGoogle } from "./actions";
 import { createClient } from '@/app/utils/supabase/client';  
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
         return; // ⛔ Stop execution if login/signup fails
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       success = false;
       console.error("Auth error:", error);
       setError("Unexpected error occurred. Please try again.");
