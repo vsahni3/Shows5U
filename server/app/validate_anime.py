@@ -108,14 +108,11 @@ class ValidateAnime(Validator):
         # if res:
         #     return res
         try:
-            response_good_img = await ValidateAnime.search_kitsu(title)
-            for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan]:
+            # searcj kitsu must be last
+            for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan, ValidateAnime.search_kitsu]:
                 response = await f(title)
                 if response:
-                    if response_good_img:
-                        response['image_url'] = response_good_img['image_url']
                     return response 
-            return response_good_img
         except Exception as e:
             print(f"Error {e}") 
             
@@ -126,12 +123,12 @@ if __name__ == "__main__":
 
     anime_title = 'Gintama'
     anime_info = asyncio.run(ValidateAnime.validate(anime_title))
-    # if anime_info:
-    #     print(f"Title: {anime_info['title']}")
-    #     print(f"Description: {anime_info['description']}")
-    #     print(f"Genres: {', '.join(anime_info['genres'])}")
-    #     print(f"Year: {anime_info['year']}")
-    #     print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
-    #     print(f"More Info: {anime_info['url']}")
-    # else:
-    #     print("Anime not found.")
+    if anime_info:
+        print(f"Title: {anime_info['title']}")
+        print(f"Description: {anime_info['description']}")
+        print(f"Genres: {', '.join(anime_info['genres'])}")
+        print(f"Year: {anime_info['year']}")
+        print(f"Image URL: {anime_info['image_url']}")  # ✅ Prints the anime image URL
+        print(f"More Info: {anime_info['url']}")
+    else:
+        print("Anime not found.")

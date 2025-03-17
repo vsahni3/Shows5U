@@ -10,6 +10,7 @@ class ValidatorHandler:
             self.validator = ValidateMovies(content_type)
             
     async def validate_multiple(self, titles: set[str]):
+        # titles = ['One Piece']
         coroutines = [self.validator.validate(title) for title in titles]
         results = await asyncio.gather(*coroutines)
         results = list(filter(lambda result: bool(result), results))

@@ -129,7 +129,7 @@ def add_ranks(scores: np.array, ratings: list[int], alpha: float = 0.75):
 def rank_recommendations(preferences: list, recommendations: list, k: int = 10):
     if not preferences:
         length = min(len(recommendations), k)
-        return list(range(length)), [0.5] * length
+        return list(range(length)), [50] * length
     pref_ratings = np.array([row.rating for row in preferences])
     # both scores betwee 0 and 1
     genre_scores = genre_match(preferences, recommendations)
@@ -151,12 +151,13 @@ def rank_recommendations(preferences: list, recommendations: list, k: int = 10):
 
 
 def give_recommendations(recommendations: list, user_id: str, k: int = 20):
-    preferences = get_user_recommendations(user_id, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type))
-
-    top_k_indices, top_k_scores = rank_recommendations(preferences, recommendations, k)
+    preferences = get_user_recommendations(user_id, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type, UserRecommendation.seen))
+    seen = {row.title for row in preferences if row.seen}
+    unseen_recommendations = [rec for rec in recommendations if rec['title'] not in seen]
+    top_k_indices, top_k_scores = rank_recommendations(preferences, unseen_recommendations, k)
     norm_scores = top_k_scores * 100
 
-    final_recs = [recommendations[index] | {"score": norm_scores[i]} for i, index in enumerate(top_k_indices)]
+    final_recs = [unseen_recommendations[index] | {"score": norm_scores[i]} for i, index in enumerate(top_k_indices)]
     return final_recs
     
 

@@ -28,7 +28,7 @@ class CohereModel(LLMModel):
         self.client = cohere.AsyncClient(api_key)
 
     async def generate(self, prompt: str) -> str:
-        message = f"Find the most relevant and mainstream semi-colon separated {self.content_type} titles matching the prompt: {prompt}. Output your answer in this EXACT format 'title1; title2; title3'"
+        message = f"Find the MOST RELEVANT and MAINSTREAM semi-colon separated {self.content_type} titles matching the prompt: {self.content_type} like {prompt}. Output your answer in this EXACT format 'title1; title2; title3'"
         response = await self.client.chat(
             message=message,
             connectors=[{"id": "web-search"}],
@@ -47,7 +47,7 @@ class ModelHandler:
         else:
             raise ValueError(f"Model '{model_name}' is not supported.")
     
-    async def generate_multiple(self, prompt: str, n_calls: int = 5):
+    async def generate_multiple(self, prompt: str, n_calls: int = 10):
         coroutines = [self.model.generate(prompt) for _ in range(n_calls)]
         results = await asyncio.gather(*coroutines)
         cleaned_results = [set(result.split('; ')) for result in results]

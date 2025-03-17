@@ -14,7 +14,7 @@ def respond():
     content_type = data['content_type']
     email = data['email']
     results = generate(query, content_type)
-
+    print(results)
     valid_results = validate_titles(content_type, results)
 
     recommended_results = give_recommendations(valid_results, email)
