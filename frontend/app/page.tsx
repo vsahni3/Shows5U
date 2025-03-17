@@ -176,6 +176,7 @@ export default function Home() {
 
           {/* Search Bar */}
           <form
+  
             onSubmit={handleSearchSubmit}
             className="w-full max-w-2xl flex items-center bg-white rounded-full shadow-lg px-6 py-4 focus-within:shadow-2xl"
           >
@@ -189,11 +190,12 @@ export default function Home() {
               className="w-full bg-transparent text-gray-900 outline-none text-lg px-4 placeholder-gray-400"
             />
             <Button
+              disabled={isLoading}
               type="submit"
               variant="solid"
               className="px-6 py-3 text-white text-lg font-semibold rounded-full transition-all bg-blue-600 hover:bg-blue-700 shadow-md"
             >
-              Search
+              {isLoading ? "Loading..." : "Search"}
             </Button>
           </form>
         </Flex>

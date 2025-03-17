@@ -15,6 +15,7 @@ const ResultsPage = () => {
   const [email, setEmail] = useState('');
 
 
+
   useEffect(() => {
     const storedData = localStorage.getItem('searchResults');
     if (storedData) {
@@ -54,6 +55,25 @@ const ResultsPage = () => {
     );
   };
 
+
+  
+  const renderSeenBadge = (seen, onToggle) => {
+    return (
+      <div
+        onClick={(e) => { 
+          e.stopPropagation(); // Prevents event bubbling if inside a link
+          e.preventDefault();  // Prevents accidental link click
+          onToggle();
+        }}
+        className={`absolute top-2 left-2 text-white text-xs font-bold px-2 py-1 rounded cursor-pointer ${
+          seen ? "bg-green-500" : "bg-red-500"
+        } hover:opacity-90 transition`}
+      >
+        {seen ? "Seen" : "Not Seen"}
+      </div>
+    );
+  };
+
   // Handle star rating change
   const handleRatingChange = (id, rating) => {
     setRatingsData((prev) => ({
@@ -70,6 +90,13 @@ const ResultsPage = () => {
     }));
   };
 
+  const toggleSeen = (id) => {
+    setRatingsData((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], seen: !(prev[id]?.seen ?? false) },
+    }));
+  };
+
   // Submit ratings and comments for a single item
   const handleSubmit = async (id) => {
     const entry = ratingsData[id];
@@ -83,7 +110,7 @@ const ResultsPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // not adding seen for now
-        body: JSON.stringify({ content_type: contentType, description: results[id].description, url: results[id].url, image_url: results[id].image_url, email: email, title: results[id].title, rating: entry.rating, comment: entry.comment }),
+        body: JSON.stringify({ content_type: contentType, seen: entry.seen, genres: results[id].genres.join(', '), description: results[id].description, url: results[id].url, image_url: results[id].image_url, email: email, title: results[id].title, rating: entry.rating, comment: entry.comment }),
       });
 
 
@@ -93,6 +120,8 @@ const ResultsPage = () => {
     handleRatingChange(id, 0);
     handleCommentChange(id, "");
   };
+
+
 
   if (!results || results.length === 0) {
     return (
@@ -106,8 +135,9 @@ const ResultsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
-      <div className="pt-20 mt-10 px-60">
-      <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-left">
+      <div className="pt-20 mt-10 px-40">
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] justify-center">
+
           {results.map((result, index) => {
             const id = result.id || index.toString();
 
@@ -115,6 +145,7 @@ const ResultsPage = () => {
 
             const currentRating = ratingsData[id]?.rating || 0;
             const currentComment = ratingsData[id]?.comment || "";
+            const currentSeen = ratingsData[id]?.seen ?? false;
 
             return (
               <div key={id} className="flex flex-col bg-white shadow-md rounded-lg overflow-hidden">
@@ -126,6 +157,9 @@ const ResultsPage = () => {
                       className="absolute top-0 left-0 w-full h-full object-cover"
                       loading="lazy"
                     />
+                   
+                   {renderSeenBadge(currentSeen, () => toggleSeen(id))}
+                
                   </div>
                   <div className="p-2">
                   <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
