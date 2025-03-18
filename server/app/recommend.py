@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 import numpy as np
 from app.crud import *
-from scipy.special import softmax
 from app.models import UserRecommendation
 from pinecone import Pinecone, ServerlessSpec
 load_dotenv()
