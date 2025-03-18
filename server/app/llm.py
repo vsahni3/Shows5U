@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import cohere
 import os
 import asyncio
+from random import randint
 from dotenv import load_dotenv
 load_dotenv()
 # idea for implementing comments + rating
@@ -12,7 +13,7 @@ load_dotenv()
 class LLMModel(ABC):
     
     def __init__(self, content_type):
-        self.system_prompt = f"You are a {content_type} recommender system that gives ONLY COMMA separated {content_type} titles to the user AND NOTHING ELSE. For example: 'Naruto; One piece; Bleach'"
+        self.system_prompt = f"You are a {content_type} recommender AI that can browse the internet and gives ONLY SEMI-COLON separated {content_type} titles to the user AND NOTHING ELSE. For example: 'Naruto; One piece; Bleach'"
         self.content_type = content_type
     @abstractmethod
     async def generate(self, prompt: str) -> str:
@@ -28,15 +29,33 @@ class CohereModel(LLMModel):
         self.client = cohere.AsyncClient(api_key)
 
     async def generate(self, prompt: str) -> str:
-        message = f"Find the MOST RELEVANT and MAINSTREAM semi-colon separated {self.content_type} titles matching the prompt: {self.content_type} like {prompt}. Output your answer in this EXACT format 'title1; title2; title3'"
-        response = await self.client.chat(
-            message=message,
-            connectors=[{"id": "web-search"}],
-            preamble=self.system_prompt,
-            model=self.model,
-            temperature=1.0
+        random_seed = randint(0, 1000)
+        instructions = f"Find at least 10 semi-colon separated {self.content_type} titles accurately matching the prompt: {self.content_type} like {prompt}."
+        message = (
+            "## Instructions\n"
+            f"{instructions}\n"
+            f"Random seed: {random_seed}\n"
+            "## Output Format\n"
+            "Provide the titles separated by semicolons, like so: 'title1; title2; title3'"
         )
-        return response.text.strip()
+        retries = 5
+        for i in range(retries):
+            try:
+                response = await self.client.chat(
+                    message=message,
+                    connectors=[{"id": "web-search"}],
+                    model=self.model,
+                    preamble=self.system_prompt,
+                    temperature=0.9,
+                    p=0.9
+                )
+                print(response.text.strip())
+                return response.text.strip()
+            except Exception as e:
+                print(f'Error: {e}')
+        raise ValueError
+            
+        
 
 
 class ModelHandler:
@@ -66,7 +85,11 @@ if __name__ == "__main__":
     
     
     # Generate text
-    prompt = "female mc"
+    prompt = "like solo leveling"
     result = asyncio.run(model.generate_multiple(prompt))
     
     print(result)
+    
+
+
+

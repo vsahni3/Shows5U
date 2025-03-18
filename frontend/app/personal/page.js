@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from '@/app/utils/supabase/client';
 
 // Example: assume results is provided from context or props
@@ -12,7 +13,6 @@ import { createClient } from '@/app/utils/supabase/client';
 const PreferencesPage = () => {
   // Assume results is already available
   const [preferences, setPreferences] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const [email, setEmail] = useState('');
 
@@ -47,9 +47,7 @@ const PreferencesPage = () => {
       
           } catch (error) {
             console.error('Preference submission failed:', error);
-          } finally {
-            setLoading(false);
-          }
+          } 
     }
     fetchPreferences();
   }, [email]);
@@ -127,12 +125,15 @@ const PreferencesPage = () => {
                     >
                       <Link href={result.url} target="_blank" rel="noopener noreferrer">
                         <div className="relative w-full" style={{ paddingTop: "150%" }}>
-                          <img
+                          <div className="absolute top-0 left-0 w-full h-full">
+                          <Image
                             src={result.image_url}
                             alt={result.title}
-                            className="absolute top-0 left-0 w-full h-full object-cover"
+                            className="object-cover"
                             loading="lazy"
+                            fill
                           />
+                          </div>
                           {renderSeenBadge(result.seen)}
                         </div>
                         <div className="p-4">

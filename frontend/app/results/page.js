@@ -2,6 +2,7 @@
 
 import Header from "../components/Header";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { createClient } from '@/app/utils/supabase/client';
 
@@ -136,7 +137,7 @@ const ResultsPage = () => {
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
       <div className="pt-20 mt-10 px-40">
-      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(180px,1fr))] justify-center">
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-left">
 
           {results.map((result, index) => {
             const id = result.id || index.toString();
@@ -151,12 +152,15 @@ const ResultsPage = () => {
               <div key={id} className="flex flex-col bg-white shadow-md rounded-lg overflow-hidden">
                 <Link href={result.url} target="_blank" rel="noopener noreferrer">
                   <div className="relative w-full" style={{ paddingTop: "150%" }}>
-                    <img
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    <Image
                       src={result.image_url}
                       alt={result.title}
-                      className="absolute top-0 left-0 w-full h-full object-cover"
+                      className="object-cover"
                       loading="lazy"
+                      fill
                     />
+                    </div>
                    
                    {renderSeenBadge(currentSeen, () => toggleSeen(id))}
                 

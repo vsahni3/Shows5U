@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Flex, Heading, Button } from '@radix-ui/themes';
 import { useRouter } from 'next/navigation';
 import { useData } from './context/dataContext';
@@ -109,7 +110,7 @@ export default function Home() {
     }
   
     fetchTrending();
-  }, [contentType]);
+  }, [contentType, cachedTrendingResults, sharedData.trendingResults, setSharedData]);
 
   // Handle search form submission.
   const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -214,12 +215,15 @@ export default function Home() {
                     className="bg-white shadow-md rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition flex flex-col"
                     style={{ height: maxHeight ? maxHeight : 'auto' }}
                   >
-                    <img
+                    <div className="relative w-full h-80">
+                    <Image
                       src={result.image_url}
                       alt={result.title}
-                      className="w-auto h-80 object-cover"
+                      className="object-cover"
                       loading="lazy"
+                      fill
                     />
+                    </div>
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden">
                         {result.title}

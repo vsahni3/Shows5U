@@ -12,11 +12,14 @@ const Header = ({ isLoading }) => {
     >
       {/* Logo and Nav Links */}
       <Flex align="center" gap="4">
-        <Image
-          src="/luffy.png"
-          alt="Logo"
-          className="w-16 h-16 object-contain object-cover rounded-full"
-        />
+      <Image
+        src="/luffy.png"
+        alt="Logo"
+        width={64}
+        height={64}
+        className="w-16 h-16 object-contain object-cover rounded-full"
+      />
+
         <Link href='/'>
         <Heading size="4" className="text-gray-700 font-medium">
           Shows5U
