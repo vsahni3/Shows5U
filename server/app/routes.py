@@ -3,22 +3,30 @@ from app.llm import generate
 from app.validate_handler import validate_titles
 from app.crud import *
 from app.recommend import give_recommendations, store_embeddings
-
+from time import time 
 # Create a Blueprint
 main_bp = Blueprint("main", __name__)
 
 @main_bp.route("/respond", methods=["POST"])
 def respond():
+    first = time()
     data = request.get_json() 
     query = data['query']
     content_type = data['content_type']
     email = data['email']
     results = generate(query, content_type)
     print(results)
+    second = time()
+    print(second - first)   
     valid_results = validate_titles(content_type, results)
+    third = time()
+    print(third - second)
 
-    recommended_results = give_recommendations(valid_results, email)
+    recommended_results = give_recommendations(valid_results, email, content_type)
+    fourth = time()
+    print(fourth - third)
     upsert_popular_recommendations(content_type, recommended_results)
+
     return jsonify({"results": recommended_results})
 
 @main_bp.route("/preference", methods=["POST"])

@@ -14,6 +14,7 @@ class ValidateAnime(Validator):
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
+                 
                     if data['data']:
                         anime = data['data'][0]
                         return {
@@ -52,6 +53,7 @@ class ValidateAnime(Validator):
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json={'query': query, 'variables': variables}) as response:
+                
                 if response.status == 200:
                     data = await response.json()
                     if 'data' in data and 'Media' in data['data']:
@@ -76,6 +78,7 @@ class ValidateAnime(Validator):
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
+
                     if data['data']:
                         anime = data['data'][0]['attributes']
                         return {
@@ -108,11 +111,11 @@ class ValidateAnime(Validator):
         # if res:
         #     return res
         try:
-            # searcj kitsu must be last
-            for f in [ValidateAnime.search_anilist, ValidateAnime.search_jikan, ValidateAnime.search_kitsu]:
+            # searcj kitsu doesn't have genres, cant check hentai
+            for f in [ValidateAnime.search_jikan, ValidateAnime.search_anilist, ValidateAnime.search_kitsu]:
                 response = await f(title)
-                if response:
-                    return response 
+                if response and 'Hentai' not in response['genres']:
+                    return response
         except Exception as e:
             print(f"Error {e}") 
             
@@ -121,7 +124,7 @@ class ValidateAnime(Validator):
 # # Example Usage
 if __name__ == "__main__":
 
-    anime_title = 'Gintama'
+    anime_title = 'Mashle: Magic and Muscles'
     anime_info = asyncio.run(ValidateAnime.validate(anime_title))
     if anime_info:
         print(f"Title: {anime_info['title']}")

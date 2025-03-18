@@ -36,11 +36,14 @@ pc_index = create_pinecone_index()
 
 
 def get_embeddings(descriptions):
+    from time import time   
+    start = time()
     response = co.embed(
         texts=descriptions,
         model='embed-english-v2.0',
         truncate='END'
     )
+    print(time() - start, 'cohere embed')
     return response.embeddings
 
 def store_embeddings(content_types: list[str], titles: list[str], descriptions: list[str]):
@@ -125,7 +128,8 @@ def add_ranks(scores: np.array, ratings: list[int], alpha: float = 0.75):
     final_scores = np.mean(scores_with_rating, axis=0)  
     return final_scores 
 
-def rank_recommendations(preferences: list, recommendations: list, k: int = 10):
+def rank_recommendations(preferences: list, recommendations: list, k: int = 20):
+
     if not preferences:
         length = min(len(recommendations), k)
         return list(range(length)), [50] * length
@@ -149,8 +153,8 @@ def rank_recommendations(preferences: list, recommendations: list, k: int = 10):
     return top_k_indices, top_k_scores
 
 
-def give_recommendations(recommendations: list, user_id: str, k: int = 20):
-    preferences = get_user_recommendations(user_id, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type, UserRecommendation.seen))
+def give_recommendations(recommendations: list, user_id: str, content_type: str, k: int = 20):
+    preferences = get_user_recommendations(user_id, content_type, cols=(UserRecommendation.title, UserRecommendation.rating, UserRecommendation.content_type, UserRecommendation.seen))
     seen = {row.title for row in preferences if row.seen}
     unseen_recommendations = [rec for rec in recommendations if rec['title'] not in seen]
     top_k_indices, top_k_scores = rank_recommendations(preferences, unseen_recommendations, k)
