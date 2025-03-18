@@ -88,7 +88,7 @@ export default function Home() {
   
       try {
         console.log("fetching");
-        const response = await fetch('http://127.0.0.1:5000/trending', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trending`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content_type: contentType }),
@@ -117,7 +117,7 @@ export default function Home() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/respond', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: searchQuery, content_type: contentType, email }),

@@ -36,7 +36,7 @@ const PreferencesPage = () => {
     async function fetchPreferences() {
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/personal', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/personal`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               // not adding seen for now

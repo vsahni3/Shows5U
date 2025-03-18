@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import insert  # PostgreSQL-specific import
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, and_
 from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import PopularRecommendation, UserRecommendation
@@ -14,6 +14,7 @@ def upsert_popular_recommendations(content_type: str, entries: list):
     :param content_type: The type of content ('anime', 'movie', 'series').
     :param entries: List of dictionaries containing keys "title", "image_url", and "url".
     """
+    forbidden_genres = {'Hentai'}
     current_time = datetime.utcnow()
     try:
 
@@ -24,9 +25,10 @@ def upsert_popular_recommendations(content_type: str, entries: list):
                 "url": entry["url"],
                 "content_type": content_type,
                 "recommendation_count": 1,
+                "genres": ", ".join(entry["genres"]),
                 "last_recommended": current_time,
             }
-            for entry in entries
+            for entry in entries if entry['genres'] and len(set(entry['genres']).intersection(forbidden_genres)) == 0
         ]
 
         stmt = (
@@ -119,7 +121,7 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
         raise
 
 
-def get_user_recommendations(user_id: str, cols: tuple = tuple()):
+def get_user_recommendations(user_id: str, content_type: str = None, cols: tuple = tuple()):
     """
     Retrieves full row objects for all recommendations of a given user,
     but only loads the attributes specified in `cols`.
@@ -128,9 +130,12 @@ def get_user_recommendations(user_id: str, cols: tuple = tuple()):
     :param cols: Tuple of columns to retrieve (default is all columns of UserRecommendation).
     :return: List of full ORM row objects with only the specified attributes loaded.
     """
-
-    # Ensure we always query for full ORM objects
-    stmt = select(UserRecommendation).where(UserRecommendation.user_id == user_id)
+    # if we select cols in starts we dont get ORM objects
+    conditions = [UserRecommendation.user_id == user_id]
+    if content_type:
+        conditions.append(UserRecommendation.content_type == content_type)
+    stmt = select(UserRecommendation).where(and_(*conditions)
+)
 
     # If specific columns are requested, apply load_only to optimize query
     if cols:

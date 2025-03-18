@@ -38,6 +38,7 @@ class PopularRecommendation(db.Model):
     content_type = db.Column(db.String(50), nullable=False)
     
     recommendation_count = db.Column(db.Integer, default=1)
+    genres = db.Column(db.String(255), nullable=False)
     last_recommended = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
     image_url = db.Column(db.String(500), nullable=False)  
