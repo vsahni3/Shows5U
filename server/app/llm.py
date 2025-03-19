@@ -30,7 +30,7 @@ class CohereModel(LLMModel):
 
     async def generate(self, prompt: str) -> str:
         random_seed = randint(0, 1000)
-        instructions = f"Recommend at least 10 mainstream semi-colon separated {self.content_type} titles accurately matching the prompt: {self.content_type} like {prompt}."
+        instructions = f"Recommend at least 10 of the most popular and mainstream semi-colon separated {self.content_type} titles accurately matching the prompt: {self.content_type} like {prompt}."
         message = (
             "## Instructions\n"
             f"{instructions}\n"

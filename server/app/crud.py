@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import PopularRecommendation, UserRecommendation
 from sqlalchemy.orm import load_only
-
+from sqlalchemy import func
 
 def upsert_popular_recommendations(content_type: str, entries: list):
     """
@@ -30,6 +30,8 @@ def upsert_popular_recommendations(content_type: str, entries: list):
             }
             for entry in entries if entry['genres'] and len(set(entry['genres']).intersection(forbidden_genres)) == 0
         ]
+        if not values:
+            return
 
         stmt = (
             insert(PopularRecommendation)
@@ -110,7 +112,7 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
                 rating=rating,
             )
             .on_conflict_do_update(
-                index_elements=["user_id", "title", "content_type"],
+                index_elements=[UserRecommendation.user_id, func.lower(UserRecommendation.title), UserRecommendation.content_type],
                 set_=update_values,
             )
         )

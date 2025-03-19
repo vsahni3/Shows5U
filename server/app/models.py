@@ -1,5 +1,6 @@
 from datetime import datetime
 from app.extensions import db
+from sqlalchemy import func
 
 # ✅ Table 1: User-Specific Recommendations (Composite Primary Key + Unique Constraint)
 class UserRecommendation(db.Model):
@@ -22,6 +23,13 @@ class UserRecommendation(db.Model):
             "content_type IN ('anime', 'movie', 'series')",
             name="check_content_type"
         ),
+        db.Index(
+            'user_recommendation_ci_idx',
+            'user_id',
+            func.lower(title),
+            'content_type',
+            unique=True
+        )
     )
 
     def __repr__(self):
