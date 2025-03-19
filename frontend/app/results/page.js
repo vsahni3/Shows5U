@@ -1,8 +1,7 @@
 "use client";
 
 import Header from "../components/Header";
-import Link from "next/link";
-import Image from "next/image";
+import PreferenceCard from '../components/PreferenceCard';
 import { useState, useEffect } from "react";
 import { createClient } from '@/app/utils/supabase/client';
 
@@ -58,50 +57,12 @@ const ResultsPage = () => {
 
 
   
-  const renderSeenBadge = (seen, onToggle) => {
-    return (
-      <div
-        onClick={(e) => { 
-          e.stopPropagation(); // Prevents event bubbling if inside a link
-          e.preventDefault();  // Prevents accidental link click
-          onToggle();
-        }}
-        className={`absolute top-2 left-2 text-white text-xs font-bold px-2 py-1 rounded cursor-pointer ${
-          seen ? "bg-green-500" : "bg-red-500"
-        } hover:opacity-90 transition`}
-      >
-        {seen ? "Seen" : "Not Seen"}
-      </div>
-    );
-  };
 
-  // Handle star rating change
-  const handleRatingChange = (id, rating) => {
-    setRatingsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], rating },
-    }));
-  };
 
-  // Handle comment change
-  const handleCommentChange = (id, comment) => {
-    setRatingsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], comment },
-    }));
-  };
-
-  const toggleSeen = (id) => {
-    setRatingsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], seen: !(prev[id]?.seen ?? false) },
-    }));
-  };
 
   // Submit ratings and comments for a single item
-  const handleSubmit = async (id) => {
-    const entry = ratingsData[id];
-    if (!entry || !entry.rating) {
+  const handleSubmit = async (result) => {
+    if (!result.rating) {
       alert("Please add a rating before submitting.");
       return;
     }
@@ -111,15 +72,14 @@ const ResultsPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // not adding seen for now
-        body: JSON.stringify({ content_type: contentType, seen: entry.seen, genres: results[id].genres.join(', '), description: results[id].description, url: results[id].url, image_url: results[id].image_url, email: email, title: results[id].title, rating: entry.rating, comment: entry.comment }),
+        body: JSON.stringify({ content_type: contentType, seen: result.seen, genres: result.genres.join(', '), description: result.description, url: result.url, image_url: result.image_url, email: email, title: result.title, rating: result.rating, comment: result.comment }),
       });
 
 
     } catch (error) {
       console.error('Preference submission failed:', error);
     }
-    handleRatingChange(id, 0);
-    handleCommentChange(id, "");
+
   };
 
 
@@ -144,66 +104,7 @@ const ResultsPage = () => {
 
             if (!result.image_url || !result.title || !result.image_url.startsWith("http")) return null;
 
-            const currentRating = ratingsData[id]?.rating || 0;
-            const currentComment = ratingsData[id]?.comment || "";
-            const currentSeen = ratingsData[id]?.seen ?? false;
-
-            return (
-              <div key={id} className="flex flex-col bg-white shadow-md rounded-lg overflow-hidden">
-                <Link href={result.url} target="_blank" rel="noopener noreferrer">
-                  <div className="relative w-full" style={{ paddingTop: "150%" }}>
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    <Image
-                      src={result.image_url}
-                      alt={result.title}
-                      className="object-cover"
-                      loading="lazy"
-                      fill
-                    />
-                    </div>
-                   
-                   {renderSeenBadge(currentSeen, () => toggleSeen(id))}
-                
-                  </div>
-                  <div className="p-2">
-                  <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
-                      {result.title}
-
-                    </h2>
-                    <p className="text-sm text-blue-600 italic">
-                      Confidence: {result.score ? `${result.score.toFixed(2)}%` : "N/A"}
-                    </p>
-                  </div>
-                </Link>
-
-                {/* Star Rating */}
-                <div>
-                  <StarRating id={id} rating={currentRating} onRatingChange={handleRatingChange} />
-                </div>
-                {/* Comment Input */}
-                <div className="mt-1 flex justify-center">
-                  <input
-                    type="text"
-                    placeholder="Add a comment (optional)"
-                    value={currentComment}
-                    onChange={(e) => handleCommentChange(id, e.target.value)}
-                    className="w-full max-w-[90%] h-8 p-1 border border-gray-300 rounded text-sm text-center" // Ensuring it stays centered
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="mt-1 py-2 flex justify-center">
-                  <button
-                    onClick={() => handleSubmit(id)}
-                    className="px-3 py-1 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-all"
-                  >
-                    Submit
-                  </button>
-                </div>
-
-
-              </div>
-            );
+            return <PreferenceCard key={id} result={result} mode="edit" onSave={handleSubmit} />
           })}
         </div>
       </div>

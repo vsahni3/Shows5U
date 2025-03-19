@@ -12,17 +12,19 @@ const Header = ({ isLoading }) => {
     >
       {/* Logo and Nav Links */}
       <Flex align="center" gap="4">
+      <Link href='/'>
       <Image
         src="/luffy.png"
         alt="Logo"
-        width={64}
-        height={64}
-        className="w-16 h-16 object-contain object-cover rounded-full"
+        width={72}
+        height={72}
+        className="object-contain object-cover rounded-full"
       />
+      </Link>
 
-        <Link href='/'>
+        <Link href='/results'>
         <Heading size="4" className="text-gray-700 font-medium">
-          Shows5U
+          Results
         </Heading>
         </Link>
         <Link href='/personal'>

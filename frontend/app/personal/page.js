@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
-import Link from "next/link";
-import Image from "next/image";
+import PreferenceCard from '../components/PreferenceCard';
 import { createClient } from '@/app/utils/supabase/client';
 
 // Example: assume results is provided from context or props
@@ -60,31 +59,60 @@ const PreferencesPage = () => {
     acc[pref.content_type].push(pref);
     return acc;
   }, {});
+  console.log(preferences.find((pref) => pref.title === "Dragon Ball Z"));
+//   console.log(
+//   Object.values(groupedPreferences)
+//     .flat()
+//     .find((pref) => pref.title === "Dragon Ball Z")
+// );
 
-  // Fixed star rating (non-clickable)
-  const renderStars = (rating) => {
-    return (
-      <div className="text-lg">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span key={star} className={star <= rating ? "text-yellow-500" : "text-gray-300"}>
-            ★
-          </span>
-        ))}
-      </div>
-    );
+   // Submit ratings and comments for a single item
+   const handleSubmit = async (result, id, contentType) => {
+    if (!result.rating) {
+      alert("Please add a rating before submitting.");
+      return;
+    }
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // not adding seen for now
+        body: JSON.stringify({ content_type: contentType, seen: result.seen, url: result.url, image_url: result.image_url, email: email, title: result.title, rating: result.rating, comment: result.comment }),
+      });
+      setPreferences(prev =>
+        prev.map((item, idx) => idx === id ? result : item)
+      );
+
+
+    } catch (error) {
+      console.error('Preference submission failed:', error);
+    }
+
   };
 
-  // Creative seen indicator using a badge overlay on the card image
-  const renderSeenBadge = (seen) => {
-    return seen ? (
-      <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-        Seen
-      </div>
-    ) : (
-      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-        Not Seen
-      </div>
-    );
+  const handleDelete = async (result, id, contentType) => {
+    if (!result.rating) {
+      alert("Please add a rating before submitting.");
+      return;
+    }
+
+    setPreferences(prev => prev.filter((_, i) => i !== id));
+
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // not adding seen for now
+        body: JSON.stringify({ content_type: contentType, seen: result.seen, url: result.url, image_url: result.image_url, email: email, title: result.title }),
+      });
+
+
+    } catch (error) {
+      console.error('Preference submission failed:', error);
+    }
+
   };
 
   return (
@@ -109,7 +137,7 @@ const PreferencesPage = () => {
               <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-left">
 
                 {items.map((result, index) => {
-                  console.log(result)
+
                   if (
                     !result.image_url ||
                     !result.image_url.startsWith("http") ||
@@ -118,42 +146,7 @@ const PreferencesPage = () => {
                     return null;
                   }
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col bg-white shadow-md rounded-lg overflow-hidden"
-                    >
-                      <Link href={result.url} target="_blank" rel="noopener noreferrer">
-                        <div className="relative w-full" style={{ paddingTop: "150%" }}>
-                          <div className="absolute top-0 left-0 w-full h-full">
-                          <Image
-                            src={result.image_url}
-                            alt={result.title}
-                            className="object-cover"
-                            loading="lazy"
-                            fill
-                          />
-                          </div>
-                          {renderSeenBadge(result.seen)}
-                        </div>
-                        <div className="p-4">
-                          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
-                            {result.title}
-                          </h3>
-                        </div>
-                      </Link>
-
-                      {/* Star rating */}
-                      <div className="px-4 pb-4">{renderStars(result.rating)}</div>
-
-                      {/* Comment (if available) */}
-                      {result.comment && (
-                        <div className="px-4 pb-4 text-sm text-gray-600 italic">
-                          “{result.comment}”
-                        </div>
-                      )}
-                    </div>
-                  );
+                  return <PreferenceCard key={index} result={result} mode="view" onSave={(result) => handleSubmit(result, index, contentType)} onDelete={(result) => handleDelete(result, index, contentType)} />
                 })}
               </div>
             </div>
