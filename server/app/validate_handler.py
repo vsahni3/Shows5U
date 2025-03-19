@@ -15,7 +15,7 @@ class ValidatorHandler:
         results = await asyncio.gather(*coroutines)
         results = list(filter(lambda result: bool(result), results))
         # make unique by setting equal to dict keys
-        dict_results = {result['title']: result for result in results}
+        dict_results = {result['title'].lower(): result for result in results}
         results = list(dict_results.values())
         return results
         

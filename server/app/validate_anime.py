@@ -94,30 +94,27 @@ class ValidateAnime(Validator):
     async def validate(title):
         """Fetch anime details asynchronously and return the first valid result."""
 
-        # tasks = {
-        #     asyncio.create_task(ValidateAnime.search_jikan(title)): "Jikan",
-        #     asyncio.create_task(ValidateAnime.search_anilist(title)): "AniList",
-        #     asyncio.create_task(ValidateAnime.search_kitsu(title)): "Kitsu"
-        # }
+        tasks = {
+            asyncio.create_task(ValidateAnime.search_jikan(title)): "Jikan",
+            asyncio.create_task(ValidateAnime.search_anilist(title)): "AniList",
+            asyncio.create_task(ValidateAnime.search_kitsu(title)): "Kitsu"
+        }
 
-        # for future in asyncio.as_completed(tasks):
-        #     try:
-        #         result = await future
-        #         if result:  
-        #             print(result, '\n\n')
-        #     except Exception as e:
-        #         print(f"Error fetching from {title}: {e}") 
-        # res = await ValidateAnime.search_jikan(title)
-        # if res:
-        #     return res
-        try:
-            # searcj kitsu doesn't have genres, cant check hentai
-            for f in [ValidateAnime.search_jikan, ValidateAnime.search_anilist, ValidateAnime.search_kitsu]:
-                response = await f(title)
-                if response and 'Hentai' not in response['genres']:
-                    return response
-        except Exception as e:
-            print(f"Error {e}") 
+        for future in asyncio.as_completed(tasks):
+            try:
+                result = await future
+                if result:  
+                    return result
+            except Exception as e:
+                print(f"Error fetching from {title}: {e}") 
+        # try:
+        #     # searcj kitsu doesn't have genres, cant check hentai
+        #     for f in [ValidateAnime.search_jikan, ValidateAnime.search_anilist, ValidateAnime.search_kitsu]:
+        #         response = await f(title)
+        #         if response and 'Hentai' not in response['genres']:
+        #             return response
+        # except Exception as e:
+        #     print(f"Error {e}") 
             
 
 
