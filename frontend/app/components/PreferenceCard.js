@@ -34,11 +34,13 @@ const PreferenceCard = ({
   const [clickedEdit, setClickedEdit] = useState(false);
   const [localRating, setLocalRating] = useState(result.rating || 0);
   const [localComment, setLocalComment] = useState(result.comment || "");
+  const [localSeen, setLocalSeen] = useState(result.seen || false);
+
 
   
 
   const handleSave = () => {
-    const updatedData = { ...result, rating: localRating, comment: localComment };
+    const updatedData = { ...result, rating: localRating, comment: localComment, seen: localSeen };
     if (externalSave) externalSave(updatedData);
     // keep edit mode if initially edit
     setEditing(editMode);
@@ -68,36 +70,43 @@ const PreferenceCard = ({
             />
           </div>
           {/* Seen Badge */}
-          {result.seen ? (
-            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-              Seen
+          <div
+            className={`absolute top-2 left-2 ${
+                localSeen ? 'bg-green-500' : 'bg-red-500'
+            } text-white text-xs font-bold px-2 py-1 rounded ${
+                editing ? 'cursor-pointer hover:opacity-90' : 'cursor-default'
+            } transition`}
+            onClick={(e) => {
+                e.preventDefault();
+                if (editing) {
+                setLocalSeen(!localSeen);
+                }
+            }}
+            >
+            {localSeen ? 'Seen' : 'Not Seen'}
             </div>
-          ) : (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-              Not Seen
-            </div>
-          )}
           {/* Edit button only in view mode */}
           {!editing && (
-            <button
-              className="absolute top-2 right-2 text-xs text-blue-500 hover:underline"
-              onClick={(e) => {
+            <div
+                className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded cursor-pointer hover:bg-blue-600 transition"
+                onClick={(e) => {
                 e.preventDefault();
                 setEditing(true);
                 setClickedEdit(true);
-              }}
+                }}
             >
-              Edit
-            </button>
-          )}
+                Edit
+            </div>
+            )}
+
         </div>
         <div className="p-2">
-          <h2 className="text-lg font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
+          <h2 className="text-lg text-center font-semibold text-gray-800 line-clamp-2 overflow-hidden min-h-[3em]">
             {result.title}
           </h2>
           {/* Confidence Score */}
           {result.score && (
-            <p className="text-sm text-blue-600 italic">
+            <p className="text-sm text-blue-500 italic">
               Confidence: {result.score ? `${result.score.toFixed(2)}%` : "N/A"}
             </p>
           )}
@@ -107,7 +116,7 @@ const PreferenceCard = ({
       {/* Editable Section */}
       {editing ? (
         <>
-          <div>
+          <div className="px-4 pb-2">
             <StarRating rating={localRating} onRatingChange={setLocalRating} editable />
           </div>
           <div className="mt-1 flex justify-center">
@@ -143,7 +152,7 @@ const PreferenceCard = ({
             <StarRating rating={result.rating} onRatingChange={() => {}} editable={false} />
           </div>
           {result.comment && (
-            <div className="mt-1 flex justify-center text-sm text-gray-600 italic">
+            <div className="py-3 flex justify-center text-sm text-gray-600 italic">
               “{result.comment}”
             </div>
           )}

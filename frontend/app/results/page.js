@@ -38,23 +38,6 @@ const ResultsPage = () => {
       fetchUserEmail();
     }, []);
 
-  // StarRating component with toggle behavior
-  const StarRating = ({ id, rating, onRatingChange }) => {
-    return (
-      <div className="flex justify-center">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            className={`cursor-pointer text-1xl ${star <= rating ? "text-yellow-500" : "text-gray-400"}`}
-            onClick={() => onRatingChange(id, rating === star ? 0 : star)}
-          >
-            {star <= rating ? "★" : "☆"}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
 
   
 

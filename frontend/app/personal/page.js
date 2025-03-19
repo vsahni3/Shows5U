@@ -42,7 +42,12 @@ const PreferencesPage = () => {
               body: JSON.stringify({ email: email }),
             });
             const data = await response.json();
-            setPreferences(data["results"]);
+            const sorted = data["results"].sort((a, b) => {
+              if (a.comment && !b.comment) return -1;
+              if (!a.comment && b.comment) return 1;
+              return 0;
+            });
+            setPreferences(sorted);
       
           } catch (error) {
             console.error('Preference submission failed:', error);
@@ -59,12 +64,7 @@ const PreferencesPage = () => {
     acc[pref.content_type].push(pref);
     return acc;
   }, {});
-  console.log(preferences.find((pref) => pref.title === "Dragon Ball Z"));
-//   console.log(
-//   Object.values(groupedPreferences)
-//     .flat()
-//     .find((pref) => pref.title === "Dragon Ball Z")
-// );
+
 
    // Submit ratings and comments for a single item
    const handleSubmit = async (result, id, contentType) => {
@@ -114,13 +114,18 @@ const PreferencesPage = () => {
     }
 
   };
+  const preferredOrder = ["anime", "series", "movie"];
+
+  const sortedContentTypes = Object.keys(groupedPreferences).sort(
+    (a, b) => preferredOrder.indexOf(a) - preferredOrder.indexOf(b)
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
       <div className="pt-20 mt-10 px-60 space-y-12">
         {/* Loop over each content type (anime, movie, series, etc.) */}
-        {Object.keys(groupedPreferences).map((contentType) => {
+        {sortedContentTypes.map((contentType) => {
           const items = groupedPreferences[contentType];
 
           // Skip if no items
