@@ -4,6 +4,7 @@ from app.validate_handler import validate_titles
 from app.crud import *
 from app.recommend import give_recommendations, store_embeddings
 from time import time 
+
 # Create a Blueprint
 main_bp = Blueprint("main", __name__)
 
@@ -38,22 +39,25 @@ def add_preference():
 
     email = data["email"]
     title = data["title"]
-    description = data["description"]
+    description = data.get("description")
     content_type = data["content_type"]
     image_url = data["image_url"]
-    genres = data["genres"]
+    genres = data.get("genres")
     url = data["url"]
-    rating = data["rating"] 
+    rating = data.get("rating")
     comment = data.get("comment")  # Optional
     seen = data.get("seen", False)  # Optional
+    if not rating:
+        delete_user_recommendation(email, title, content_type)
+    else:
+        upsert_user_recommendation(user_id=email, title=title, genres=genres, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
+        
+        # description_or_comment = comment if comment else description
+        if description:
+            description_or_comment = description
+            store_embeddings([content_type], [title], [description_or_comment])
 
-    upsert_user_recommendation(user_id=email, title=title, genres=genres, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
-    
-    # description_or_comment = comment if comment else description
-    description_or_comment = description
-    store_embeddings([content_type], [title], [description_or_comment])
-
-    return jsonify({"message": "User recommendation added/updated successfully"})
+    return jsonify({"message": "User recommendation added/updated/deleted successfully"})
 
 @main_bp.route("/trending", methods=["POST"])
 def get_trending():

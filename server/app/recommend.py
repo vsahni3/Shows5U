@@ -5,6 +5,7 @@ import numpy as np
 from app.crud import *
 from app.models import UserRecommendation
 from pinecone import Pinecone, ServerlessSpec
+from app.utils import to_ascii_safe_id
 load_dotenv()
 # can later build model like transformer, takes in preferenes + ratings and current title and gives score
 # for training we use titles which also have user ranking associated to eval score
@@ -50,7 +51,7 @@ def store_embeddings(content_types: list[str], titles: list[str], descriptions: 
     embeddings = get_embeddings(descriptions)
     vectors = [
         {
-            "id": f"{content_types[i]}_{titles[i]}",
+            "id": f"{content_types[i]}_{to_ascii_safe_id(titles[i])}",
             "values": embeddings[i]
         }
         for i in range(len(embeddings))
@@ -82,7 +83,7 @@ def keyword_match_boost(pref_comments, rec_texts, boost=0.2):
 def retrieve_embeddings(items: list[tuple[str, str]]):
     if not items:
         return []
-    ids = [f"{content_type}_{title}" for title, content_type in items]
+    ids = [f"{content_type}_{to_ascii_safe_id(title)}" for title, content_type in items]
     response = pc_index.fetch(ids=ids)
     embeddings = [response.vectors[item_id].values for item_id in ids]
     assert len(embeddings) == len(ids)
@@ -139,6 +140,7 @@ def rank_recommendations(preferences: list, recommendations: list, k: int = 20):
     genre_scores_with_ratings = add_ranks(genre_scores, pref_ratings)
 
     pref_embeddings = retrieve_embeddings(items=[(row.title, row.content_type) for row in preferences])
+
     rec_descriptions = [rec['description'] for rec in recommendations]
     rec_embeddings = get_embeddings(rec_descriptions)
     

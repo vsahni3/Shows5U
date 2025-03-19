@@ -122,6 +122,21 @@ def upsert_user_recommendation(user_id: str, title: str, content_type: str, rati
         db.session.rollback()
         raise
 
+def delete_user_recommendation(user_id: str, title: str, content_type: str):
+    """
+    Deletes a user recommendation based on user_id, title (case-insensitive), and content_type.
+    """
+    stmt = (
+        delete(UserRecommendation)
+        .where(
+            UserRecommendation.user_id == user_id,
+            func.lower(UserRecommendation.title) == title.lower(),
+            UserRecommendation.content_type == content_type
+        )
+    )
+    result = db.session.execute(stmt)
+    db.session.commit()
+    return result.rowcount
 
 def get_user_recommendations(user_id: str, content_type: str = None, cols: tuple = tuple()):
     """
