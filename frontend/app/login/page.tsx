@@ -24,7 +24,7 @@ export default function LoginPage() {
         }
 
         signOutUser();
-    }, []);
+    }, [setSharedData]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

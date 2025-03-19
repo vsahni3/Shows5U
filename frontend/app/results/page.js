@@ -8,10 +8,6 @@ import { createClient } from '@/app/utils/supabase/client';
 const ResultsPage = () => {
   const [results, setResults] = useState([]);
   const [contentType, setContentType] = useState('');
-
-
-  // Global state to hold ratings and comments
-  const [ratingsData, setRatingsData] = useState({});
   const [email, setEmail] = useState('');
 
 
