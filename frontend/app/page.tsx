@@ -87,7 +87,6 @@ export default function Home() {
 
   
       try {
-        console.log("fetching");
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trending`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -115,6 +114,13 @@ export default function Home() {
   // Handle search form submission.
   const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const forbiddenKeywords = ['porn', 'sex', 'hentai', 'fuck'];
+
+    if (forbiddenKeywords.some(keyword => searchQuery.toLowerCase().includes(keyword))) {
+      alert('Your query contains inappropriate keywords. Please refine your search.');
+      setSearchQuery('');
+      return; 
+    }
     setIsLoading(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/respond`, {

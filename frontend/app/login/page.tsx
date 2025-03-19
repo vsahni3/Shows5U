@@ -6,9 +6,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login, signup, signInWithGoogle } from "./actions";
 import { createClient } from '@/app/utils/supabase/client';  
+import { useData } from '../context/dataContext';
 
 
 export default function LoginPage() {
+  const { setSharedData } = useData();
 
     useEffect(() => {
         const supabase = createClient();
@@ -16,6 +18,9 @@ export default function LoginPage() {
         async function signOutUser() {
             await supabase.auth.signOut();
             console.log("User signed out automatically on login page.");
+            localStorage.clear();
+            setSharedData({});
+
         }
 
         signOutUser();
