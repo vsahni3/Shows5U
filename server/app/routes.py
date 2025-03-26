@@ -3,6 +3,7 @@ from app.llm import generate
 from app.validate_handler import validate_titles
 from app.crud import *
 from app.utils import run_async_task
+from app.extensions import limiter
 from app.redis import cache_results, map_names, run_with_client
 from app.recommend import give_recommendations, store_embeddings
 from time import time 
@@ -16,6 +17,7 @@ main_bp = Blueprint("main", __name__)
 
 
 @main_bp.route("/respond", methods=["POST"])
+@limiter.limit("3 per minute")
 def respond():
     data = request.get_json() 
     query = data['query']
