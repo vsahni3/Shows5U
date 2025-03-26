@@ -26,12 +26,12 @@ class ValidateMovies(Validator):
                     if data.get("Response") == "True":
                         poster_url = data.get("Poster")
                         return {
-                            "title": data.get("Title"),
-                            "description": data.get("Plot"),
-                            "genres": data.get("Genre", "").split(", "),
+                            "title": data["Title"],
+                            "description": data["Plot"],
+                            "genres": data["Genre"].split(", "),
                             "year": data.get("Year"),
                             "image_url": poster_url,
-                            "url": f"https://www.imdb.com/title/{data.get('imdbID')}"
+                            "url": f"https://www.imdb.com/title/{data['imdbID']}"
                         }
         return None
 
@@ -51,12 +51,12 @@ class ValidateMovies(Validator):
                         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
 
                         return {
-                            "title": result.get("title") if media_type == "movie" else result.get("name"),
-                            "description": result.get("overview"),
+                            "title": result["title"] if media_type == "movie" else result["name"],
+                            "description": result["overview"],
                             "genres": [],  # TMDb genres require a separate API call
-                            "year": result.get("release_date", "")[:4] if media_type == "movie" else result.get("first_air_date", "")[:4],
+                            "year": int(result.get("release_date")[:4]) if media_type == "movie" else int(result.get("first_air_date")[:4]),
                             "image_url": poster_url,
-                            "url": f"https://www.themoviedb.org/{media_type}/{result.get('id')}"
+                            "url": f"https://www.themoviedb.org/{media_type}/{result['id']}"
                         }
         return None
 
