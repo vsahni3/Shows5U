@@ -117,7 +117,7 @@ export default function Home() {
     const forbiddenKeywords = ['porn', 'sex', 'hentai', 'fuck'];
 
     if (forbiddenKeywords.some(keyword => searchQuery.toLowerCase().includes(keyword))) {
-      alert('Your query contains inappropriate keywords. Please refine your search.');
+      alert('Your query contains inappropriate keywords. Get your head out the gutters.');
       setSearchQuery('');
       return; 
     }
