@@ -2,31 +2,37 @@ from flask import Blueprint, jsonify, request
 from app.llm import generate
 from app.validate_handler import validate_titles
 from app.crud import *
+from app.utils import run_async_task
+from app.redis import cache_results, map_names, run_with_client
 from app.recommend import give_recommendations, store_embeddings
 from time import time 
+import threading
+
+
 
 # Create a Blueprint
 main_bp = Blueprint("main", __name__)
 
+
+
 @main_bp.route("/respond", methods=["POST"])
 def respond():
-    first = time()
     data = request.get_json() 
     query = data['query']
     content_type = data['content_type']
     email = data['email']
     results = generate(query, content_type)
-    print(results)
-    second = time()
-    print(second - first)   
-    valid_results = validate_titles(content_type, results)
-    third = time()
-    print(third - second)
+ 
+
+    valid_results, to_map, to_cache = validate_titles(content_type, results)
+
 
     recommended_results = give_recommendations(valid_results, email, content_type)
-    fourth = time()
-    print(fourth - third)
+
     upsert_popular_recommendations(content_type, recommended_results)
+    
+    threading.Thread(target=run_async_task, args=(run_with_client, cache_results, to_cache, content_type)).start()
+    threading.Thread(target=run_async_task, args=(run_with_client, map_names, to_map)).start()
 
     return jsonify({"results": recommended_results})
 
