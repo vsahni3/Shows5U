@@ -1,0 +1,1 @@
+FORBIDDEN_GENRES = {'Hentai'}
