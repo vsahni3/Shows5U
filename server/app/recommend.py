@@ -37,14 +37,11 @@ pc_index = create_pinecone_index()
 
 
 def get_embeddings(descriptions):
-    from time import time   
-    start = time()
     response = co.embed(
         texts=descriptions,
         model='embed-english-v2.0',
         truncate='END'
     )
-    print(time() - start, 'cohere embed')
     return response.embeddings
 
 def store_embeddings(content_types: list[str], titles: list[str], descriptions: list[str]):
@@ -93,10 +90,20 @@ def retrieve_embeddings(items: list[tuple[str, str]]):
 def genre_match(preferences: list, recommendations: list):
     # normalize by dividing by preference len (not rec len)
     # if rec has 10 genres, pref has 2 and 2 mathes, score should be 1 rather than 0.2
-    scores = [[len(set(pref.genres.split(', ')).intersection(set(rec['genres']))) / len(pref.genres.split(', '))
-            for rec in recommendations]
-            for pref in preferences]
-    return np.array(scores)
+    scores = np.full((len(preferences), len(recommendations)), -1)
+    score_sum = 0
+    score_count = 0
+    for i in range(len(preferences)):
+        pref_genres = preferences[i].genres.split(', ')
+        for j in range(len(recommendations)):
+            rec_genres = recommendations[j]['genres']
+            if pref_genres and rec_genres:
+                scores[i][j] = len(set(pref_genres).intersection(set(rec_genres))) / len(pref_genres)
+                score_sum += scores[i][j]
+                score_count += 1
+    score_mean = score_sum / score_count if score_count > 0 else 0
+    scores[scores == -1] = score_mean
+    return scores
 
 
 def embed_match(pref_embeddings: list[list[float]], rec_embeddings: list[list[float]]):
