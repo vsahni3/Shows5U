@@ -43,6 +43,24 @@ async def map_names(r, names: list[tuple], prefix: str = "alias"):
     except Exception as e:
         print(f"Error during mapping: {e}")
 
+async def cache_titles(r, key: str, values: set[str], content_type: str, ttl: int = 60 * 60 * 24 * 7):
+    if not values:
+        return
+    key = f"{content_type}:{key.lower()}"
+    try:
+        await r.sadd(key, *values)
+        if ttl:
+            await r.expire(key, ttl)
+    except Exception as e:
+        print(f"Error caching titles for key {key}: {e}")
+
+
+async def get_titles(r, key: str, content_type: str) -> set[str]:
+    key = f"{content_type}:{key.lower()}"
+    try:
+        return await r.smembers(key)
+    except Exception as e:
+        print(f"Error retrieving titles for key {key}: {e}")
 
 
 async def cache_results(r, results: list[dict], content_type: str, prefix: str = "cache", ttl: int = None):
@@ -57,7 +75,6 @@ async def cache_results(r, results: list[dict], content_type: str, prefix: str =
                         k: json.dumps(v) if isinstance(v, (list, dict)) else v
                         for k, v in result.items()
                     }
-                    # print(redis_key, serialized_result, '\n\n')
                     await pipeline.hset(redis_key, mapping=serialized_result)
                     if ttl:
                         await pipeline.expire(redis_key, ttl)
@@ -111,9 +128,6 @@ async def get_cached_results_with_fallback(r, titles: list[str], content_type: s
     final_results = {}
     for i, title in enumerate(titles):
         if original_results[i]:
-            
-            
-            
             final_results[title] = original_results[i]
         elif i in fallback_map:
             final_results[title] = fallback_map[i]
@@ -122,11 +136,11 @@ async def get_cached_results_with_fallback(r, titles: list[str], content_type: s
 
 
 
-async def clear_cache(r, prefix: str = "cache"):
-
-    keys = await r.keys(f"{prefix}:*")
-    if keys:
-        await r.delete(*keys)
+async def clear_cache(r, prefixes: tuple[str] = ("cache", "alias", "series", "anime", "movie")):
+    for prefix in prefixes:
+        keys = await r.keys(f"{prefix}:*")
+        if keys:
+            await r.delete(*keys)
 
 
 async def auto_cleanup(r, prefix: str = "cache", threshold_percent: float = 80, cleanup_percent: float = 20, max_memory: float = 3e7):

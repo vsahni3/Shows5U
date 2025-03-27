@@ -4,6 +4,7 @@ import os
 import asyncio
 from random import randint
 from dotenv import load_dotenv
+from app.redis import get_titles, redis_client
 load_dotenv()
 # idea for implementing comments + rating
 # good rating means find similar descriptions
@@ -59,13 +60,18 @@ class CohereModel(LLMModel):
 
 class ModelHandler:
     
-    def __init__(self, model_name: str, **kwargs):
+    def __init__(self, model_name: str, content_type: str, **kwargs):
+        self.content_type = content_type
         if model_name.lower() == "cohere":
-            self.model = CohereModel(**kwargs)
+            self.model = CohereModel(content_type, **kwargs)
         else:
             raise ValueError(f"Model '{model_name}' is not supported.")
     
     async def generate_multiple(self, prompt: str, n_calls: int = 10):
+        async with redis_client() as r:
+            cached_titles = await get_titles(r, prompt, self.content_type)
+        if cached_titles:
+            return cached_titles
         coroutines = [self.model.generate(prompt) for _ in range(n_calls)]
         results = await asyncio.gather(*coroutines)
         cleaned_results = [set(result.split('; ')) for result in results]
@@ -73,7 +79,7 @@ class ModelHandler:
         return aggregated_results
         
 def generate(prompt: str, content_type: str, model_name: str = 'cohere'):
-    model = ModelHandler(model_name, content_type=content_type)
+    model = ModelHandler(model_name, content_type)
     result = asyncio.run(model.generate_multiple(prompt))
     return result
 

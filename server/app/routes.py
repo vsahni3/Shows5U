@@ -4,7 +4,7 @@ from app.validate_handler import validate_titles
 from app.crud import *
 from app.utils import run_async_task
 from app.extensions import limiter
-from app.redis import cache_results, map_names, run_with_client
+from app.redis import cache_results, map_names, run_with_client, cache_titles
 from app.recommend import give_recommendations, store_embeddings
 from time import time 
 import threading
@@ -14,10 +14,17 @@ import threading
 # Create a Blueprint
 main_bp = Blueprint("main", __name__)
 
-
+def start_background_tasks(query, results, content_type, to_cache, to_map):
+    tasks = [
+        (run_with_client, cache_results, to_cache, content_type),
+        (run_with_client, map_names, to_map),
+        (run_with_client, cache_titles, query, results, content_type)
+    ]
+    for task in tasks:
+        threading.Thread(target=run_async_task, args=task).start()
 
 @main_bp.route("/respond", methods=["POST"])
-@limiter.limit("3 per minute")
+@limiter.limit("2 per minute")
 def respond():
     data = request.get_json() 
     query = data['query']
@@ -33,8 +40,7 @@ def respond():
 
     upsert_popular_recommendations(content_type, recommended_results)
     
-    threading.Thread(target=run_async_task, args=(run_with_client, cache_results, to_cache, content_type)).start()
-    threading.Thread(target=run_async_task, args=(run_with_client, map_names, to_map)).start()
+    start_background_tasks(query, results, content_type, to_cache, to_map)
 
     return jsonify({"results": recommended_results})
 
