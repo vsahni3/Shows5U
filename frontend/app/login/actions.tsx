@@ -61,7 +61,7 @@ export async function signup(formData: AuthData) {
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
-    console.log(process.env.NEXT_PUBLIC_SITE_URL);
+    console.log(process.env.NEXT_PUBLIC_SITE_URL, 99);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -80,6 +80,7 @@ export async function signInWithGoogle() {
     
     
     if (data.url) {
+      console.log('happened')
       redirect(data.url)
     }
     return { success: true };
