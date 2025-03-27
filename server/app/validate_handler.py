@@ -35,10 +35,9 @@ class ValidatorHandler:
         to_map = []
         async with redis_client() as r:
             cached_dict = await get_cached_results_with_fallback(r, list(titles), self.content_type)
-        
+
         cached_titles = set(cached_dict.keys())
         cached_results = list(cached_dict.values())
-        print(len(cached_titles))
         titles -= cached_titles
         coroutines = [self.validate_single(title, to_map) for title in titles]
         results = await asyncio.gather(*coroutines)
@@ -62,7 +61,7 @@ if __name__ == "__main__":
     start = time()
     
     
-    a = validate_titles('anime', anime_shows)
+    a = validate_titles('anime', set())
 
     # sleep(10)
 
