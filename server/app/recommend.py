@@ -82,8 +82,8 @@ def retrieve_embeddings(items: list[tuple[str, str]]):
         return []
     ids = [f"{content_type}_{to_ascii_safe_id(title)}" for title, content_type in items]
     response = pc_index.fetch(ids=ids)
-    embeddings = [response.vectors[item_id].values for item_id in ids]
-    assert len(embeddings) == len(ids)
+    # need to add the if statement bc embeddings are added async, so if we just added one it won't be here
+    embeddings = [response.vectors[item_id].values for item_id in ids if item_id in response.vectors]
     return embeddings
 
 
@@ -91,6 +91,7 @@ def genre_match(preferences: list, recommendations: list):
     # normalize by dividing by preference len (not rec len)
     # if rec has 10 genres, pref has 2 and 2 mathes, score should be 1 rather than 0.2
     scores = np.full((len(preferences), len(recommendations)), -1)
+
     score_sum = 0
     score_count = 0
     for i in range(len(preferences)):
@@ -153,7 +154,6 @@ def rank_recommendations(preferences: list, recommendations: list, k: int = 20):
     
     embed_scores = embed_match(pref_embeddings, rec_embeddings)
     embed_scores_with_ratings = add_ranks(embed_scores, pref_ratings)
-
     scores = (genre_scores_with_ratings + embed_scores_with_ratings) / 2
     
     top_k_indices = np.argsort(scores)[::-1][:k]
