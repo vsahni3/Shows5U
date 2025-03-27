@@ -41,6 +41,13 @@ const ResultsPage = () => {
 
   // Submit ratings and comments for a single item
   const handleSubmit = async (result) => {
+    const genres = Array.isArray(result.genres) && result.genres.length
+  ? result.genres.join(", ")
+  : "No genres listed";
+    console.log(result.genres.length);
+    console.log(typeof result.genres);
+    console.log(result.genres.join(', '))
+
     if (!result.rating) {
       alert("Please add a rating before submitting.");
       return;
