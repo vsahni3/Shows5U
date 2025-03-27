@@ -141,20 +141,18 @@ class ValidateAnime(Validator):
         tasks = {
             asyncio.create_task(ValidateAnime.search_anilist(title)): "anilist",
             asyncio.create_task(ValidateAnime.search_jikan(title)): "jikan",
-            asyncio.create_task(ValidateAnime.search_kitsu(title)): "kitsu"
-            
-
         }
-        from app.utils import left_to_right_match
-
-        for future in asyncio.as_completed(tasks):
-            try:
+        # see if caching gives enougb results without kitsu
+        try:
+            for future in asyncio.as_completed(tasks):
                 result = await future
                 if result:  
                     return result
-            except Exception as e:
-                print(f"Error fetching from {title}: {e}") 
-      
+            return await ValidateAnime.search_kitsu(title)
+        except Exception as e:
+            print(f"Error fetching from {title}: {e}") 
+        
+    
         # try:
         #     # searcj kitsu doesn't have genres, cant check hentai
         #     for f in [ValidateAnime.search_jikan, ValidateAnime.search_anilist, ValidateAnime.search_kitsu]:
@@ -168,8 +166,9 @@ class ValidateAnime(Validator):
 
 # # Example Usage
 if __name__ == "__main__":
-    anime_title = 'shield hero'
+    anime_title = 'Horimiya -piece-'
     anime_info = asyncio.run(ValidateAnime.validate(anime_title))
+    print(anime_info['genres'])
     # if anime_info:
     #     print(f"Title: {anime_info['title']}")
     #     print(f"Description: {anime_info['description']}")

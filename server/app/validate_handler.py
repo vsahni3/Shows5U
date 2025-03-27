@@ -2,7 +2,7 @@ from app.validate_movies import ValidateMovies
 from app.validate_anime import ValidateAnime
 from app.redis import cache_results, get_cached_results_with_fallback, map_names, redis_client, clear_cache
 from app.llm import generate
-from app.constants import FORBIDDEN_GENRES
+from app.constants import FORBIDDEN_GENRES, TO_AVOID
 from app.utils import left_to_right_match
 from time import sleep, time
 # if caching memory  not enough, can always just czche genres and title for kitsu
@@ -19,10 +19,11 @@ class ValidatorHandler:
     # dont want to change eevry validate method of diff classes for common processing
     async def validate_single(self, title: str, to_map: list):
         result = await self.validator.validate(title)
-        if not result or len(set(result['genres']).intersection(FORBIDDEN_GENRES)) > 0:
+        if not result or len(set(result['genres']).intersection(FORBIDDEN_GENRES)) > 0 or result['title'] in TO_AVOID:
             return {}
         result = {k: ("" if v is None else v) for k, v in result.items()}
         if self.content_type == 'anime':
+            result['title'] = result['title'].rstrip('!')
             actual_title = result['title']
             # japanese vs english
             if left_to_right_match(title, actual_title) < 0.5:
