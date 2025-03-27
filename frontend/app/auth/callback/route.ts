@@ -14,16 +14,21 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
+      console.log(forwardedHost, 2);
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
         // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
         console.log(process.env.NEXT_PUBLIC_SITE_URL, 1);
+        await new Promise((r) => setTimeout(r, 100));
         return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}${next}`)
       } else if (forwardedHost) {
         console.log(forwardedHost, 2);
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+        await new Promise((r) => setTimeout(r, 100));
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}${next}`);
+        // return NextResponse.redirect(`https://${forwardedHost}${next}`)
       } else {
         console.log(process.env.NEXT_PUBLIC_SITE_URL, 3);
+        await new Promise((r) => setTimeout(r, 100));
         return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}${next}`)
       }
     }
