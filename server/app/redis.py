@@ -1,7 +1,6 @@
 import redis.asyncio as redis
 import os
-import json
-from app.utils import left_to_right_match, try_decode
+from app.utils import left_to_right_match, serialize, deserialize
 import asyncio
 from dotenv import load_dotenv
 
@@ -35,10 +34,10 @@ async def run_with_client(redis_func, *args, **kwargs):
 async def map_names(r, names: list[tuple], prefix: str = "alias"):
     try:
         async with r.pipeline(transaction=True) as pipe:
-            for name1, name2 in names:
-                name1, name2 = name1.lower(), name2.lower()
-                pipe.set(f"{prefix}:{name1}", name2)
-                pipe.set(f"{prefix}:{name2}", name1)
+            for title, actual_title in names:
+                title, actual_title = title.lower(), actual_title.lower()
+                pipe.set(f"{prefix}:{title}", actual_title)
+
             await pipe.execute()
     except Exception as e:
         print(f"Error during mapping: {e}")
@@ -71,11 +70,7 @@ async def cache_results(r, results: list[dict], content_type: str, prefix: str =
             for result in results:
                 redis_key = f"{prefix}:{content_type}_{result['title'].lower()}"
                 if result['genres'] and not await r.exists(redis_key):
-                    serialized_result = {
-                        k: json.dumps(v) if isinstance(v, (list, dict)) else v
-                        for k, v in result.items()
-                    }
-                    await pipeline.hset(redis_key, mapping=serialized_result)
+                    await pipeline.hset(redis_key, mapping=serialize(result))
                     if ttl:
                         await pipeline.expire(redis_key, ttl)
                     
@@ -128,9 +123,9 @@ async def get_cached_results_with_fallback(r, titles: list[str], content_type: s
     final_results = {}
     for i, title in enumerate(titles):
         if original_results[i]:
-            final_results[title] = original_results[i]
+            final_results[title] = deserialize(original_results[i])
         elif i in fallback_map:
-            final_results[title] = fallback_map[i]
+            final_results[title] = deserialize(fallback_map[i])
     
     return final_results
 
@@ -201,14 +196,14 @@ if __name__ == '__main__':
             "Naruto Shippuden",
         }
         async with redis_client() as r:
-            # await clear_cache(r)
+            await clear_cache(r)
             keys = await get_keys(r, "cache")
             print(keys)
             # data = [
             #     {"title": str(i), "genres": ['g1', 'g2'], "age": 30} for i in range(10)
             # ]
             # await cache_results(data, 'anime', prefix="cache")
-            # cached = await get_cached_results(r, anime_shows, 'anime')
+            # cached = await get_cached_results_with_fallback(r, ['dororo'], 'anime')
 
-
+            # print(cached)
     asyncio.run(main())
