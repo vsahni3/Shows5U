@@ -81,6 +81,7 @@ export async function signInWithGoogle() {
     
     if (data.url) {
       console.log('happened')
+      console.log(data.url)
       redirect(data.url)
     }
     return { success: true };
