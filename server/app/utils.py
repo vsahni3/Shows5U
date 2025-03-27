@@ -2,7 +2,7 @@ import unicodedata
 import re
 import hashlib
 import asyncio
-
+import json
 
 def left_to_right_match(str1: str, str2: str) -> float:
     str1, str2 = str1.lower(), str2.lower()
@@ -11,13 +11,18 @@ def left_to_right_match(str1: str, str2: str) -> float:
     return matches / min_len if min_len > 0 else 0.0
 
 
-def try_decode(value):
-    if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            return value
-    return value
+def serialize(result): 
+    return {
+        k: json.dumps(v) if isinstance(v, (list, dict)) else v
+        for k, v in result.items()
+    }
+    
+    
+def deserialize(result): 
+    return {
+        k: json.loads(v) if isinstance(v, str) and v.startswith(('{', '[')) else v
+        for k, v in result.items()
+    }
 
 
 def to_ascii_safe_id(name: str) -> str:

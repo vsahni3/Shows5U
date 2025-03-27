@@ -35,7 +35,6 @@ def respond():
 
     valid_results, to_map, to_cache = validate_titles(content_type, results)
 
-
     recommended_results = give_recommendations(valid_results, email, content_type)
 
     upsert_popular_recommendations(content_type, recommended_results)
