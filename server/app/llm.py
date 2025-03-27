@@ -74,7 +74,7 @@ class ModelHandler:
             return cached_titles
         coroutines = [self.model.generate(prompt) for _ in range(n_calls)]
         results = await asyncio.gather(*coroutines)
-        cleaned_results = [set(result.split('; ')) for result in results]
+        cleaned_results = [{title.strip().rstrip('!') for title in result.split('; ')} for result in results]
         aggregated_results = set().union(*cleaned_results)
         return aggregated_results
         
