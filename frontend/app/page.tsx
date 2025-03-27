@@ -24,6 +24,7 @@ export default function Home() {
     movie?: TrendingResult[];
     series?: TrendingResult[];
   }>({});
+  
   const [contentType, setContentType] = useState<'anime' | 'movie' | 'series'>('anime');
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
@@ -128,6 +129,10 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: searchQuery, content_type: contentType, email }),
       });
+      if (response.status === 429) {
+        alert('Too many requests. Stop spamming :)');
+        return; // Exit early
+      }
       const data = await response.json();
       localStorage.setItem('searchResults', JSON.stringify({
         results: data['results'],

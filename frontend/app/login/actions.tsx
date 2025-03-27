@@ -61,7 +61,7 @@ export async function signup(formData: AuthData) {
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
-    
+    console.log(process.env.NEXT_PUBLIC_SITE_URL);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
