@@ -16,6 +16,12 @@ interface TrendingResult {
   url: string;
 }
 
+const contentQueries: Record<"anime" | "movie" | "series", string[]> = {
+  anime: ["smart witty mc", "isekai", "like solo leveling"],
+  movie: ["with tom cruise", "sci-fi thrillers", "where the villain wins"],
+  series: ["teenage romance", "feel-good sitcoms", "binge-watch in a weekend"],
+};
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -26,6 +32,8 @@ export default function Home() {
   }>({});
   
   const [contentType, setContentType] = useState<'anime' | 'movie' | 'series'>('anime');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const currentQuery = contentQueries[contentType][placeholderIndex];
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
   interface SharedData {
@@ -40,6 +48,8 @@ export default function Home() {
     sharedData: SharedData; 
     setSharedData: React.Dispatch<React.SetStateAction<SharedData>>; 
   };
+
+  
 
   // Refs for trending result cards and state for uniform height.
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -73,6 +83,14 @@ export default function Home() {
     }
     fetchUserEmail();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % contentQueries[contentType].length);
+    }, 3000);
+  
+    return () => clearInterval(interval);
+  }, [contentType]);
 
   useEffect(() => {
     async function fetchTrending() {
@@ -150,7 +168,7 @@ export default function Home() {
     <>
       <Head>
         <title>Anime Search</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" sizes="32x32" href="/favicon.ico?v=2" />
       </Head>
 
       {/* Full Page Layout */}
@@ -195,7 +213,7 @@ export default function Home() {
             <input
               type="text"
               name="search"
-              placeholder={`Enter ${contentType === 'anime' ? 'an' : 'a'} ${contentType} query...`}
+              placeholder={`${currentQuery}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search"
