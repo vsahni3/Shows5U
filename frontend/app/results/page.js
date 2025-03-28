@@ -77,8 +77,8 @@ const ResultsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
-      <div className="pt-20 mt-10 px-40">
-      <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-left">
+      <div className="pt-20 mt-10 px-4 sm:px-8 lg:px-60 space-y-12">
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-center">
 
           {results.map((result, index) => {
             const id = result.id || index.toString();

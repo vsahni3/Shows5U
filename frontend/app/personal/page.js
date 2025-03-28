@@ -123,7 +123,7 @@ const PreferencesPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Header onSignOut={() => {}} isLoading={false} />
-      <div className="pt-20 mt-10 px-60 space-y-12">
+      <div className="pt-20 mt-10 px-4 sm:px-8 lg:px-60 space-y-12">
         {/* Loop over each content type (anime, movie, series, etc.) */}
         {sortedContentTypes.map((contentType) => {
           const items = groupedPreferences[contentType];
@@ -134,12 +134,13 @@ const PreferencesPage = () => {
           return (
             <div key={contentType}>
               {/* Section heading */}
-              <h2 className="text-3xl font-bold text-gray-800 mb-6 capitalize">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 
+               capitalize break-words w-full text-center sm:text-left">
                 {contentType}
               </h2>
 
               {/* Cards grid */}
-              <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-left">
+              <div className="grid gap-6 grid-cols-[repeat(auto-fit,200px)] justify-center sm:justify-start">
 
                 {items.map((result, index) => {
 
