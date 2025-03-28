@@ -17,7 +17,6 @@ interface TrendingResult {
 }
 
 export default function Home() {
-  console.log(process.env.NEXT_PUBLIC_SITE_URL, 4)
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [cachedTrendingResults, setCachedTrendingResults] = useState<{

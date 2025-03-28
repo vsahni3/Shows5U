@@ -11,7 +11,6 @@ import { useData } from '../context/dataContext';
 
 export default function LoginPage() {
   const { setSharedData } = useData();
-  console.log(process.env.NEXT_PUBLIC_SITE_URL, 7);
 
     useEffect(() => {
         const supabase = createClient();
