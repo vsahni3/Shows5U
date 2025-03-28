@@ -37,11 +37,12 @@ export async function signup(formData: AuthData) {
     // in practice, you should validate your inputs
 
     await supabase.auth.signOut();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
     const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`, // 🔹 Ensures redirect after email confirmation
+            emailRedirectTo: `${siteUrl}/auth/callback`, // 🔹 Ensures redirect after email confirmation
         },
     });
 
@@ -60,12 +61,14 @@ export async function signup(formData: AuthData) {
 
 
 export async function signInWithGoogle() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+
     const supabase = await createClient()
     console.log(process.env.NEXT_PUBLIC_SITE_URL, 99);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
