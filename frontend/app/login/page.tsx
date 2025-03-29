@@ -1,85 +1,72 @@
 'use client';
 
-
 import { Button, Card, Flex, Heading, TextField, Text } from '@radix-ui/themes';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { login, signup, signInWithGoogle } from "./actions";
+import { otpLogin, verifyOtp, signInWithGoogle } from "./actions"; // Ensure otpLogin is correctly imported
 import { createClient } from '@/app/utils/supabase/client';  
 import { useData } from '../context/dataContext';
 
-
 export default function LoginPage() {
   const { setSharedData } = useData();
-
-    useEffect(() => {
-        const supabase = createClient();
-        
-        async function signOutUser() {
-            await supabase.auth.signOut();
-            console.log("User signed out automatically on login page.");
-            localStorage.clear();
-            setSharedData({});
-
-        }
-
-        signOutUser();
-    }, [setSharedData]);
-
+  const [step, setStep] = useState<'email' | 'otp'>('email');
+  console.log(step)
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  async function handleAuthAction<T = void>(
-    authFunction: (args: T) => Promise<{ success: boolean; message?: string }>,
-    args?: T 
-  ) {
-    let success = true;
-    setLoading(true);
+  useEffect(() => {
+    const supabase = createClient();
     
+    async function signOutUser() {
+      await supabase.auth.signOut();
+      console.log("User signed out automatically on login page.");
+      localStorage.clear();
+      setSharedData({});
+    }
+
+    signOutUser();
+  }, [setSharedData]);
+
+  async function handleOtpLogin() {
+    setLoading(true);
+    setError('');
 
     try {
-      let response;
-      if (args !== undefined) {
-        response = await authFunction(args);
+      const response = await otpLogin(email);
+      if (response.success) {
+        setStep('otp');
       } else {
-        response = await (authFunction as () => Promise<{ success: boolean; message?: string }>)();
+        setError(response.message || 'Authentication failed. Please try again.');
       }
-  
-      if (!response.success) {
-        success = false;
-        setError(response.message || "Authentication failed. Please try again.");
-        return; // ⛔ Stop execution if login/signup fails
-      }
-      
     } catch (error: unknown) {
-      success = false;
-      console.error("Auth error:", error);
-      setError("Unexpected error occurred. Please try again.");
+      console.error('OTP login error:', error);
+      setError('Unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
-      return success;
     }
-  
   }
 
-    
+  const handleOtpSubmit = async (): Promise<void> => {
+    setLoading(true);
+    setError('');
 
-
-  async function handleAuth(isSignup: boolean) {
-    let success;
-    if (isSignup) {
-      success = await handleAuthAction(signup, { email, password });
-      console.log(success)
-      if (success) router.push("/checkEmail");
-    } else {
-      success = await handleAuthAction(login, { email, password });
-      if (success) router.push("/");
+    try {
+      const response = await verifyOtp(email, otp);
+      if (response.success) {
+        router.push('/');
+      } else {
+        setError(response.message || 'OTP verification failed. Please try again.');
+      }
+    } catch (error: unknown) {
+      console.error('OTP verification error:', error);
+      setError('Unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-  }
+  };
 
   return (
     <Flex
@@ -95,36 +82,31 @@ export default function LoginPage() {
             Login
           </Heading>
           
-          <form>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (step === 'email') {
+              handleOtpLogin();
+            } else {
+              handleOtpSubmit();
+            }
+          }}>
             <Flex direction="column" gap="3">
-              <TextField.Root
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+            <TextField.Root
+              type={step === 'email' ? 'email' : 'text'} // 'text' is appropriate for OTP input
+              placeholder={step.charAt(0).toUpperCase() + step.slice(1)}
+              value={step === 'email' ? email : otp}
+              onChange={(e) => (step === 'email' ? setEmail(e.target.value) : setOtp(e.target.value))}
+              required
+            />
 
-              
-              <TextField.Root
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-
-                  {error && (
-                  <Text color="red" size="2" align="center">
-                      {error}
-                  </Text>
+              {error && (
+                <Text color="red" size="2" align="center">
+                  {error}
+                </Text>
               )}
   
-              <Button onClick={() => handleAuth(false)} disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-              <Button onClick={() => handleAuth(true)} disabled={loading}>
-                {loading ? 'Signing up...' : 'Sign up'}
+              <Button type="submit" disabled={loading}>
+                {step == 'email' ? (loading ? 'Sending OTP...' : 'Login') : (loading ? 'Verifying OTP...' : 'Verify OTP')}
               </Button>
             </Flex>
           </form>
@@ -143,8 +125,3 @@ export default function LoginPage() {
     </Flex>
   );
 }
-
-
-
-
-
