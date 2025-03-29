@@ -3,11 +3,6 @@ import { createClient } from '@/app/utils/supabase/server';
 
 import { redirect } from 'next/navigation'
 
-type AuthData = {
-  email: string;
-  password: string;
-}
-
 export async function otpLogin(email: string): Promise<{ success: boolean; message?: string }> {
   const supabase = await createClient();
 
