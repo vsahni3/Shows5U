@@ -44,7 +44,6 @@ class CohereModel(LLMModel):
             try:
                 response = await self.client.chat(
                     message=message,
-                    connectors=[{"id": "web-search"}],
                     model=self.model,
                     preamble=self.system_prompt,
                     temperature=0.9,

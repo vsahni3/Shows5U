@@ -16,8 +16,8 @@ load_dotenv()
 def create_pinecone_index():
     pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
-    index_name = 'embeddings'
-    embedding_dimension = 4096  
+    index_name = 'embeddings-v3'
+    embedding_dimension = 1024
 
     if not pc.has_index(index_name):
         pc.create_index(
@@ -39,7 +39,8 @@ pc_index = create_pinecone_index()
 def get_embeddings(descriptions):
     response = co.embed(
         texts=descriptions,
-        model='embed-english-v2.0',
+        model='embed-english-v3.0',
+        input_type='search_document',
         truncate='END'
     )
     return response.embeddings
@@ -151,7 +152,7 @@ def rank_recommendations(preferences: list, recommendations: list, k: int = 20):
 
     rec_descriptions = [rec['description'] for rec in recommendations]
     rec_embeddings = get_embeddings(rec_descriptions)
-    
+
     embed_scores = embed_match(pref_embeddings, rec_embeddings)
     embed_scores_with_ratings = add_ranks(embed_scores, pref_ratings)
     scores = (genre_scores_with_ratings + embed_scores_with_ratings) / 2
