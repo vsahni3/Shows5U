@@ -62,15 +62,16 @@ def add_preference():
     seen = data.get("seen", False)  # Optional
     if not rating:
         delete_user_recommendation(email, title, content_type)
-    else:
-        upsert_user_recommendation(user_id=email, title=title, genres=genres, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
-        
-        # description_or_comment = comment if comment else description
-        if description:
-            description_or_comment = description
-            store_embeddings([content_type], [title], [description_or_comment])
+        return jsonify({"message": "User recommendation deleted"})
 
-    return jsonify({"message": "User recommendation added/updated/deleted successfully"})
+    embedding_text = description or comment or f"{title} {genres or ''}".strip()
+    try:
+        store_embeddings([content_type], [title], [embedding_text])
+    except Exception as e:
+        return jsonify({"error": f"Embedding store failed; preference not saved: {e}"}), 502
+
+    upsert_user_recommendation(user_id=email, title=title, genres=genres, content_type=content_type, rating=rating, comment=comment, seen=seen, url=url, image_url=image_url)
+    return jsonify({"message": "User recommendation saved"})
 
 @main_bp.route("/trending", methods=["POST"])
 def get_trending():
